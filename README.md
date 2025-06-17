@@ -54,7 +54,7 @@ Then run it:
 
 ## Development Notes
 
-For planned features like Add/Edit/Delete modes, file persistence, XDG path support, and CLI improvements, see (TODO.md)[TODO.md]. Contributions and ideas welcome!
+For planned features like Add/Edit/Delete modes, file persistence, XDG path support, and CLI improvements, see [TODO.md](TODO.md). Contributions and ideas welcome!
 
 ## License
 
