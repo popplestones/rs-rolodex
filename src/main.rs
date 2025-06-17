@@ -1,10 +1,13 @@
 mod app;
 mod contact;
+mod message;
+mod modal;
 mod tui;
-mod ui;
 
-use app::{RunningState, handle_event, init_model, update};
-use ui::view;
+use crate::update::update;
+use app::state::RunningState;
+use app::update::handle_event;
+use app::{init_model, update};
 
 fn main() -> color_eyre::Result<()> {
     tui::install_panic_hook();
@@ -12,7 +15,7 @@ fn main() -> color_eyre::Result<()> {
     let mut model = init_model("contacts.json")?;
 
     while model.running_state != RunningState::Done {
-        terminal.draw(|f| view(&mut model, f))?;
+        terminal.draw(|f| app::ui::view(&mut model, f))?;
 
         let mut current_msg = handle_event(&model)?;
 

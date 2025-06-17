@@ -5,7 +5,7 @@ use ratatui::{
     widgets::Paragraph,
 };
 
-use crate::app::Model;
+use super::Model;
 
 pub fn view(model: &mut Model, frame: &mut Frame) {
     use ratatui::style::Stylize;
