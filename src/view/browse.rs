@@ -44,4 +44,20 @@ pub fn draw_contact_list(f: &mut Frame, app: &App, area: Rect) {
     list_state.select(Some(app.browse.selected_index));
 
     f.render_stateful_widget(list, area, &mut list_state);
+
+    let scrollbar = Scrollbar::default()
+        .orientation(ScrollbarOrientation::VerticalRight)
+        .thumb_style(Style::default().bg(Color::Gray))
+        .track_style(Style::default().bg(Color::DarkGray));
+    let mut scrollbar_state =
+        ScrollbarState::new(app.browse.filtered_contacts.len()).position(app.browse.selected_index);
+
+    f.render_stateful_widget(
+        scrollbar,
+        area.inner(Margin {
+            vertical: 1,
+            horizontal: 1,
+        }),
+        &mut scrollbar_state,
+    );
 }
