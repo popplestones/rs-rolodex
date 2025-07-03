@@ -30,7 +30,7 @@ pub fn draw_contact_list(f: &mut Frame, app: &App, area: Rect) {
             let email = c.email.as_deref().unwrap_or("<none>");
             let phone = c.phone.as_deref().unwrap_or("<none>");
 
-            let line = format!("{:<24} {:<20} {:<24} {:<12}", c.name, company, email, phone);
+            let line = format!("{:<24} {:<40} {:<40} {:<12}", c.name, company, email, phone);
             ListItem::new(line)
         })
         .collect();

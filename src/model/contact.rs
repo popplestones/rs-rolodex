@@ -1,4 +1,6 @@
-#[derive(Debug, Default, Clone)]
+use serde::Serialize;
+
+#[derive(Serialize, Debug, Default, Clone)]
 pub struct Contact {
     pub id: i64,
     pub name: String,

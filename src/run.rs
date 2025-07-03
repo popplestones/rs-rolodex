@@ -1,10 +1,13 @@
 use std::time::{Duration, Instant};
 
-use crate::{Db, app::App, error::AppResult as Result, input::handler::handle_input, view::draw};
+use crate::{
+    Db, app::App, error::AppResult as Result, input::handler::handle_input, model::Contact,
+    view::draw,
+};
 use crossterm::event::{self, Event};
 use ratatui::prelude::*;
 
-pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, db: Db) -> Result<()> {
+pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, db: Db) -> Result<Option<Contact>> {
     let mut app = App::new(db)?;
     let tick_rate = Duration::from_millis(250);
     let mut last_tick = Instant::now();
@@ -32,5 +35,5 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, db: Db) -> Result<()> {
             break;
         }
     }
-    Ok(())
+    Ok(app.selected_contact)
 }

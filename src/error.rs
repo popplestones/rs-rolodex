@@ -19,6 +19,9 @@ pub enum AppError {
 
     #[error("Row Parse: {0}")]
     RowParse(String),
+
+    #[error("JSON Error: {0}")]
+    Json(#[from] serde_json::Error),
 }
 
 pub type AppResult<T> = Result<T, AppError>;

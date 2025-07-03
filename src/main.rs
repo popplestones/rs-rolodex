@@ -18,8 +18,13 @@ fn main() -> Result<()> {
     }
 
     let mut terminal = tui::init_terminal()?;
-    let res = run_app(&mut terminal, db);
+    let selected = run_app(&mut terminal, db)?;
     tui::restore_terminal()?;
 
-    res
+    if let Some(contact) = selected {
+        let json = serde_json::to_string_pretty(&contact)?;
+        println!("{}", json);
+    }
+
+    Ok(())
 }
