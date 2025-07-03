@@ -97,4 +97,10 @@ impl Db {
 
         Ok(rows)
     }
+    pub fn delete_contact(&self, id: i64) -> Result<()> {
+        self.conn
+            .execute("DELETE FROM contacts WHERE id = ?", [id])
+            .map_err(|e| AppError::Database(format!("delete: {e}")))?;
+        Ok(())
+    }
 }

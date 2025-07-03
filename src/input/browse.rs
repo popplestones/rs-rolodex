@@ -1,6 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::{app::App, error::AppError};
+use crate::{app::App, error::AppError, mode::AppMode};
 
 pub fn handle_input(app: &mut App, event: KeyEvent) -> Result<(), AppError> {
     match event.code {
@@ -21,12 +21,26 @@ pub fn handle_input(app: &mut App, event: KeyEvent) -> Result<(), AppError> {
             app.browse.selected_index = app.browse.filtered_contacts.len() - 1;
         }
         KeyCode::Enter => {
-            app.selected_contact =
-                Some(app.browse.filtered_contacts[app.browse.selected_index].clone());
+            app.select_contact();
             app.should_quit = true;
         }
         KeyCode::Char('q') if event.modifiers.contains(KeyModifiers::CONTROL) => {
             app.should_quit = true;
+        }
+        KeyCode::Char('c') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+            app.browse.search_input.clear();
+            app.browse.update_filter(&app.all_contacts);
+        }
+        KeyCode::Char('d') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+            app.select_contact();
+            app.mode = AppMode::DeleteConfirmation;
+        }
+        KeyCode::Esc => {
+            if app.browse.search_input.is_empty() {
+                app.should_quit = true;
+            }
+            app.browse.search_input.clear();
+            app.browse.update_filter(&app.all_contacts);
         }
         KeyCode::Char(c) => {
             app.browse.search_input.push(c);

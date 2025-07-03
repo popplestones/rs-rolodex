@@ -3,6 +3,7 @@ use ratatui::prelude::*;
 use crate::{app::App, mode::AppMode};
 
 pub mod browse;
+pub mod delete_confirmation;
 pub mod error;
 
 pub fn draw(f: &mut Frame, app: &App) {
@@ -13,6 +14,7 @@ pub fn draw(f: &mut Frame, app: &App) {
     // Step 2: overlay mode-specific view (like modals)
     match app.mode {
         AppMode::Error => error::draw(f, app),
+        AppMode::DeleteConfirmation => delete_confirmation::draw(f, app),
         _ => {}
     }
 }

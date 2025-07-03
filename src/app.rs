@@ -35,6 +35,13 @@ impl App {
             self.mode = AppMode::Browse;
         }
     }
+    pub fn select_contact(&mut self) {
+        self.selected_contact =
+            Some(self.browse.filtered_contacts[self.browse.selected_index].clone());
+    }
+    pub fn unselect_contact(&mut self) {
+        self.selected_contact = None;
+    }
 }
 
 #[derive(Debug, Default)]
