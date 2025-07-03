@@ -5,7 +5,7 @@ use crossterm::event::{self, Event};
 use ratatui::prelude::*;
 
 pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, db: Db) -> Result<()> {
-    let mut app = App::new(db);
+    let mut app = App::new(db)?;
     let tick_rate = Duration::from_millis(250);
     let mut last_tick = Instant::now();
 

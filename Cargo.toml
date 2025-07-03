@@ -4,9 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+clap = { version = "4.5.40", features = ["derive"] }
 color-eyre = "0.6.5"
 crossterm = "0.29.0"
 directories = "6.0.0"
+names = "0.14.0"
+rand = "0.9.1"
 ratatui = "0.29.0"
 rusqlite = "0.36.0"
 serde = { version = "1.0.219", features = ["derive"] }

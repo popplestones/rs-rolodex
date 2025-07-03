@@ -25,11 +25,13 @@ pub fn draw_contact_list(f: &mut Frame, app: &App, area: Rect) {
         .browse
         .filtered_contacts
         .iter()
-        .map(|display| {
-            ListItem::new(format!(
-                "{} {} {} {}",
-                display.name, display.company, display.email, display.phone
-            ))
+        .map(|c| {
+            let company = c.company.as_deref().unwrap_or("<none>");
+            let email = c.email.as_deref().unwrap_or("<none>");
+            let phone = c.phone.as_deref().unwrap_or("<none>");
+
+            let line = format!("{:<24} {:<20} {:<24} {:<12}", c.name, company, email, phone);
+            ListItem::new(line)
         })
         .collect();
 

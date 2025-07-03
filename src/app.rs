@@ -1,5 +1,5 @@
-use crate::{Db, mode::AppMode};
-
+use crate::error::AppResult as Result;
+use crate::{Db, mode::AppMode, model::contact::Contact};
 pub struct App {
     pub db: Db,
     pub mode: AppMode,
@@ -8,13 +8,15 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(db: Db) -> Self {
-        Self {
+    pub fn new(db: Db) -> Result<Self> {
+        let contacts = db.load_customers()?;
+        let browse = BrowseState::new(contacts);
+        Ok(Self {
             db,
             mode: AppMode::Browse,
             should_quit: false,
-            browse: BrowseState::default(),
-        }
+            browse,
+        })
     }
 
     pub fn set_error(&mut self, _msg: impl Into<String>) {
@@ -36,10 +38,12 @@ pub struct BrowseState {
     pub selected_index: usize,
 }
 
-#[derive(Debug, Default)]
-pub struct Contact {
-    pub name: String,
-    pub company: String,
-    pub phone: String,
-    pub email: String,
+impl BrowseState {
+    pub fn new(contacts: Vec<Contact>) -> Self {
+        Self {
+            all_contacts: contacts.clone(),
+            filtered_contacts: contacts,
+            ..Default::default()
+        }
+    }
 }

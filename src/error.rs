@@ -16,6 +16,9 @@ pub enum AppError {
 
     #[error("Database error: {0}")]
     Database(String),
+
+    #[error("Row Parse: {0}")]
+    RowParse(String),
 }
 
 pub type AppResult<T> = Result<T, AppError>;

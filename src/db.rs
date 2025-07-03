@@ -1,6 +1,10 @@
 use std::path::Path;
 
-use crate::error::{AppError, AppResult as Result};
+use crate::{
+    error::{AppError, AppResult as Result},
+    model::Contact,
+};
+use rand::Rng;
 use rusqlite::{Connection, OpenFlags};
 
 pub struct Db {
@@ -38,7 +42,7 @@ impl Db {
     fn init_schema(conn: &Connection) -> Result<()> {
         conn.execute_batch(
             r#"
-            CREATE TABLE customers (
+            CREATE TABLE contacts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 email TEXT,
@@ -51,5 +55,46 @@ impl Db {
         .map_err(|e| AppError::Database(format!("create schema: {e}")))?;
 
         Ok(())
+    }
+    pub fn seed(&mut self, count: u32) -> Result<()> {
+        let tx = self
+            .conn
+            .transaction()
+            .map_err(|e| AppError::Database(format!("begin tx: {e}")))?;
+
+        let mut rng = rand::rng();
+        let mut name_gen = names::Generator::default();
+        let mut company_gen = names::Generator::with_naming(names::Name::Numbered);
+
+        for _ in 0..count {
+            let name = name_gen.next().unwrap_or("John Doe".into());
+            let email = format!("{}@example.com", name.replace(' ', "").to_lowercase());
+            let phone = format!("04{:08}", rng.random_range(0..=99999999));
+            let company = format!("{} Pty Ltd", company_gen.next().unwrap_or("Acme".into()));
+
+            tx.execute(
+                "INSERT INTO contacts (name, email, phone, company) VALUES (?, ?, ?, ?)",
+                (&name, &email, &phone, &company),
+            )
+            .map_err(|e| AppError::Database(format!("insert fake: {e}")))?;
+        }
+        tx.commit()
+            .map_err(|e| AppError::Database(format!("commit tx: {e}")))?;
+
+        Ok(())
+    }
+    pub fn load_customers(&self) -> Result<Vec<Contact>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT id, name, email, phone, company from contacts order by name asc")
+            .map_err(|e| AppError::Database(format!("prepare load: {e}")))?;
+
+        let rows = stmt
+            .query_map([], Contact::from_row)
+            .map_err(|e| AppError::Database(format!("query map: {e}")))?
+            .collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(|e| AppError::Database(format!("collect: {e}")))?;
+
+        Ok(rows)
     }
 }
