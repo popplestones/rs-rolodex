@@ -35,6 +35,9 @@ pub fn handle_input(app: &mut App, event: KeyEvent) -> Result<(), AppError> {
             app.select_contact();
             app.mode = AppMode::DeleteConfirmation;
         }
+        KeyCode::Char('a') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+            app.mode = AppMode::AddContact;
+        }
         KeyCode::Esc => {
             if app.browse.search_input.is_empty() {
                 app.should_quit = true;

@@ -3,9 +3,12 @@ use rolodex::cli::Cli;
 use rolodex::config::Config;
 use rolodex::error::AppResult as Result;
 use rolodex::run::run_app;
-use rolodex::{Db, tui};
+use rolodex::{Db, trace, tui};
+use tracing::info;
 
 fn main() -> Result<()> {
+    trace::init()?;
+    info!("Starting log");
     tui::install_panic_hook();
 
     let args = Cli::parse();
@@ -23,7 +26,7 @@ fn main() -> Result<()> {
 
     if let Some(contact) = selected {
         let json = serde_json::to_string_pretty(&contact)?;
-        println!("{}", json);
+        println!("{json}");
     }
 
     Ok(())

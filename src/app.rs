@@ -2,7 +2,9 @@ use fuzzy_matcher::FuzzyMatcher;
 use fuzzy_matcher::skim::SkimMatcherV2;
 
 use crate::error::AppResult as Result;
+use crate::form::add_contact::AddContactForm;
 use crate::{Db, mode::AppMode, model::contact::Contact};
+
 pub struct App {
     pub db: Db,
     pub selected_contact: Option<Contact>,
@@ -10,6 +12,7 @@ pub struct App {
     pub mode: AppMode,
     pub should_quit: bool,
     pub browse: BrowseState,
+    pub add_contact_form: AddContactForm,
 }
 
 impl App {
@@ -23,6 +26,7 @@ impl App {
             mode: AppMode::Browse,
             should_quit: false,
             browse,
+            add_contact_form: AddContactForm::new(),
         })
     }
 
