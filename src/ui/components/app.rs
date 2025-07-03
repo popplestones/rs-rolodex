@@ -1,9 +1,16 @@
-use fuzzy_matcher::FuzzyMatcher;
-use fuzzy_matcher::skim::SkimMatcherV2;
+use fuzzy_matcher::{FuzzyMatcher, skim::SkimMatcherV2};
 
-use crate::error::AppResult as Result;
-use crate::form::add_contact::AddContactForm;
-use crate::{Db, mode::AppMode, model::contact::Contact};
+use crate::{
+    Db,
+    error::AppResult as Result,
+    mode::AppMode,
+    model::Contact,
+    ui::components::{
+        Component, add_contact::AddContactForm, delete_confirmation::DeleteConfirmation,
+    },
+    view::browse,
+    view::error,
+};
 
 pub struct App {
     pub db: Db,
@@ -48,6 +55,25 @@ impl App {
     }
 }
 
+impl Component for App {
+    fn draw(&self, f: &mut ratatui::Frame, rect: ratatui::prelude::Rect, is_focussed: bool) {
+        // Step 1: Draw main browse ui
+
+        browse::draw(f, self);
+
+        // Step 2: overlay mode-specific view (like modals)
+        match self.mode {
+            AppMode::Error => error::draw(f, self),
+            AppMode::DeleteConfirmation => DeleteConfirmation::draw(f, self),
+            AppMode::AddContact => self.add_contact_form.draw(f, f.area(), false),
+            _ => {}
+        }
+    }
+
+    fn handle_key(&mut self, code: crossterm::event::KeyCode) {
+        todo!()
+    }
+}
 #[derive(Debug, Default)]
 pub struct BrowseState {
     pub search_input: String,

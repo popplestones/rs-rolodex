@@ -1,6 +1,6 @@
 use ratatui::{prelude::*, widgets::*};
 
-use crate::app::App;
+use crate::ui::components::app::App;
 
 pub fn draw(f: &mut Frame, app: &App) {
     let chunks = Layout::default()

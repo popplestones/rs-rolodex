@@ -1,8 +1,8 @@
 use std::time::{Duration, Instant};
 
 use crate::{
-    Db, app::App, error::AppResult as Result, input::handler::handle_input, model::Contact,
-    view::draw,
+    Db, error::AppResult as Result, input::handler::handle_input, model::Contact,
+    ui::components::app::App, view::draw,
 };
 use crossterm::event::{self, Event};
 use ratatui::prelude::*;

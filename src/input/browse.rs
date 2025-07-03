@@ -1,6 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::{app::App, error::AppError, mode::AppMode};
+use crate::{error::AppError, mode::AppMode, ui::components::app::App};
 
 pub fn handle_input(app: &mut App, event: KeyEvent) -> Result<(), AppError> {
     match event.code {
