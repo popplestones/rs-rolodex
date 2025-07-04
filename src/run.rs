@@ -1,8 +1,13 @@
 use std::time::{Duration, Instant};
 
 use crate::{
-    Db, error::AppResult as Result, input::handler::handle_input, model::Contact,
-    ui::components::app::App, view::draw,
+    Db,
+    error::AppResult as Result,
+    model::Contact,
+    ui::components::{
+        Component,
+        app::{App, message::AppMessage},
+    },
 };
 use crossterm::event::{self, Event};
 use ratatui::prelude::*;
@@ -13,18 +18,17 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, db: Db) -> Result<Option<
     let mut last_tick = Instant::now();
 
     loop {
-        terminal.draw(|f| draw(f, &app))?;
+        terminal.draw(|f| app.draw(f, f.area(), false))?;
 
         let timeout = tick_rate
             .checked_sub(last_tick.elapsed())
             .unwrap_or(Duration::from_secs(0));
 
-        if event::poll(timeout)? {
-            if let Event::Key(key_event) = event::read()? {
-                if let Err(err) = handle_input(&mut app, key_event) {
-                    app.set_error(err.to_string());
-                }
-            }
+        if event::poll(timeout)?
+            && let Event::Key(key_event) = event::read()?
+            && let Some(msg) = app.handle_key(key_event)
+        {
+            propagate(&mut app, msg);
         }
 
         if last_tick.elapsed() <= tick_rate {
@@ -36,4 +40,10 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, db: Db) -> Result<Option<
         }
     }
     Ok(app.selected_contact)
+}
+
+fn propagate(app: &mut App, mut msg: AppMessage) {
+    while let Some(next) = app.update(msg) {
+        msg = next;
+    }
 }

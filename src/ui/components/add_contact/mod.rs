@@ -1,3 +1,6 @@
+pub mod message;
+use message::AddContactFormMessage;
+
 use crate::{
     model::Contact,
     ui::{
@@ -5,7 +8,7 @@ use crate::{
         layout::centered_rect,
     },
 };
-use crossterm::event::KeyCode;
+use crossterm::event::KeyEvent;
 use ratatui::{prelude::*, widgets::*};
 use tracing::info;
 
@@ -44,30 +47,31 @@ impl AddContactForm {
         self.focused = 0;
     }
 }
-
-impl Component for AddContactForm {
-    fn handle_key(&mut self, code: KeyCode) {
-        match code {
-            KeyCode::Tab => {
-                if self.focused < self.fields.len() - 1 {
-                    self.focused += 1;
-                } else {
-                    self.focused = 0;
-                }
-            }
-            KeyCode::BackTab => {
-                if self.focused > 0 {
-                    self.focused -= 1;
-                } else {
-                    self.focused = self.fields.len() - 1;
-                }
-            }
-            _ => {
-                if let Some(field) = self.fields.get_mut(self.focused) {
-                    field.handle_key(code);
-                }
-            }
-        }
+use crate::ui::components::app::message::AppMessage;
+impl Component<AddContactFormMessage, AppMessage> for AddContactForm {
+    fn handle_key(&self, _event: KeyEvent) -> Option<AddContactFormMessage> {
+        // match event.code {
+        //     KeyCode::Tab => {
+        //         if self.focused < self.fields.len() - 1 {
+        //             self.focused += 1;
+        //         } else {
+        //             self.focused = 0;
+        //         }
+        //     }
+        //     KeyCode::BackTab => {
+        //         if self.focused > 0 {
+        //             self.focused -= 1;
+        //         } else {
+        //             self.focused = self.fields.len() - 1;
+        //         }
+        //     }
+        //     _ => {
+        //         if let Some(field) = self.fields.get_mut(self.focused) {
+        //             field.handle_key(event);
+        //         }
+        //     }
+        // }
+        None
     }
 
     fn draw(&self, f: &mut Frame, _: Rect, _: bool) {
@@ -98,6 +102,10 @@ impl Component for AddContactForm {
             let is_focused = i == self.focused;
             field.draw(f, *rect, is_focused);
         }
+    }
+
+    fn update(&mut self, _message: AddContactFormMessage) -> Option<AppMessage> {
+        todo!()
     }
 }
 fn opt(value: &str) -> Option<String> {
