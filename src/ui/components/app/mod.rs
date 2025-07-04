@@ -22,6 +22,7 @@ pub struct App {
     pub should_quit: bool,
     pub browse: browse::Browse,
     pub add_contact_form: AddContactForm,
+    pub delete_confirmation: DeleteConfirmation,
 }
 
 impl App {
@@ -36,6 +37,7 @@ impl App {
             should_quit: false,
             browse,
             add_contact_form: AddContactForm::new(),
+            delete_confirmation: DeleteConfirmation::new(),
         })
     }
 
@@ -66,7 +68,7 @@ impl Component<AppMessage, AppMessage> for App {
         // Step 2: overlay mode-specific view (like modals)
         match self.mode {
             AppMode::Error => error::draw(f, self),
-            AppMode::DeleteConfirmation => DeleteConfirmation::draw(f, self),
+            AppMode::DeleteConfirmation => self.delete_confirmation.draw(f, f.area(), false),
             AppMode::AddContact => self.add_contact_form.draw(f, f.area(), false),
             _ => {}
         }
