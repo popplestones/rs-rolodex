@@ -6,7 +6,9 @@ use crate::{
     mode::AppMode,
     model::Contact,
     ui::components::{
-        Component, add_contact::AddContactForm, delete_confirmation::DeleteConfirmation,
+        Component,
+        add_contact::AddContactForm,
+        delete_confirmation::{DeleteConfirmation, message::DeleteMessage},
     },
     view::error,
 };
@@ -41,12 +43,12 @@ impl App {
         })
     }
 
-    pub fn set_error(&mut self, _msg: impl Into<String>) {
-        self.mode = AppMode::Error;
+    pub fn set_error(&mut self, msg: impl Into<String>) {
+        self.mode = AppMode::Error(msg.into());
     }
 
     pub fn clear_error(&mut self) {
-        if self.mode == AppMode::Error {
+        if matches!(self.mode, AppMode::Error(_)) {
             self.mode = AppMode::Browse;
         }
     }
@@ -67,7 +69,7 @@ impl Component<AppMessage, AppMessage> for App {
 
         // Step 2: overlay mode-specific view (like modals)
         match self.mode {
-            AppMode::Error => error::draw(f, self),
+            AppMode::Error(_) => error::draw(f, self),
             AppMode::Delete => self.delete_confirmation.draw(f, f.area(), false),
             AppMode::Add => self.add_contact_form.draw(f, f.area(), false),
             _ => {}
@@ -81,6 +83,35 @@ impl Component<AppMessage, AppMessage> for App {
             AppMessage::SelectContact(contact) => {
                 self.selected_contact = Some(contact);
                 self.should_quit = true;
+                None
+            }
+            AppMessage::Delete(contact) => {
+                self.mode = AppMode::Delete;
+                self.delete_confirmation.set_contact(contact);
+                None
+            }
+            AppMessage::ConfirmDelete => {
+                if let Some(id) = self.delete_confirmation.get_contact_id() {
+                    match self.db.delete_contact(id) {
+                        Ok(_) => {
+                            self.mode = AppMode::Browse;
+                            self.browse.update_filter();
+                            self.delete_confirmation.clear_contact();
+                            None
+                        }
+                        Err(e) => Some(AppMessage::Error(e.to_string())),
+                    }
+                } else {
+                    Some(AppMessage::Error("Contact not found".to_string()))
+                }
+            }
+            AppMessage::CancelDelete => {
+                self.mode = AppMode::Browse;
+                self.delete_confirmation.clear_contact();
+                None
+            }
+            AppMessage::Error(msg) => {
+                self.set_error(msg);
                 None
             }
             AppMessage::Quit => {
@@ -103,10 +134,11 @@ impl Component<AppMessage, AppMessage> for App {
         match self.mode {
             AppMode::Browse => self.browse.handle_key(event).map(AppMessage::Browse),
             AppMode::Add => self.add_contact_form.handle_key(event).map(AppMessage::Add),
-            AppMode::Delete => self
-                .delete_confirmation
-                .handle_key(event)
-                .map(AppMessage::Delete),
+            AppMode::Delete => match self.delete_confirmation.handle_key(event) {
+                Some(DeleteMessage::Confirm) => Some(AppMessage::ConfirmDelete),
+                Some(DeleteMessage::Cancel) => Some(AppMessage::CancelDelete),
+                _ => None,
+            },
             _ => None,
         }
     }

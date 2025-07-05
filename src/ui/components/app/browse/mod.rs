@@ -2,7 +2,7 @@ pub mod contact_list;
 pub mod message;
 pub mod search;
 
-use crossterm::event::{KeyCode, KeyEvent};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use fuzzy_matcher::{FuzzyMatcher, skim::SkimMatcherV2};
 use ratatui::prelude::*;
 
@@ -94,6 +94,13 @@ impl Component<BrowseMessage, AppMessage> for Browse {
                 self.update_filter();
                 None
             }
+            BrowseMessage::Delete => {
+                if let Some(contact) = self.get_selected_contact() {
+                    Some(AppMessage::Delete(contact))
+                } else {
+                    None
+                }
+            }
         }
     }
 
@@ -109,51 +116,13 @@ impl Component<BrowseMessage, AppMessage> for Browse {
             | KeyCode::PageDown => {
                 return self.contact_list.handle_key(event).map(BrowseMessage::List);
             }
+            KeyCode::Char('d') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+                return Some(BrowseMessage::Delete);
+            }
             _ => None::<BrowseMessage>,
         };
 
         // Handle Keys for the Search
         self.search.handle_key(event).map(BrowseMessage::Search)
-        // match event.code {
-        //     KeyCode::Enter => {
-        //
-        //         self.contact_list.select_contact();
-        //         app.should_quit = true;
-        //     }
-        //
-        //     KeyCode::Up | KeyCode::Down | KeyCode::Home | KeyCode::End => {
-        //         self.contact_list.handle_key(code)
-        //     }
-        //     KeyCode::Char('q') if event.modifiers.contains(KeyModifiers::CONTROL) => {
-        //         app.should_quit = true;
-        //     }
-        //     KeyCode::Char('c') if event.modifiers.contains(KeyModifiers::CONTROL) => {
-        //         app.browse.search_input.clear();
-        //         app.browse.update_filter(&app.all_contacts);
-        //     }
-        //     KeyCode::Char('d') if event.modifiers.contains(KeyModifiers::CONTROL) => {
-        //         app.select_contact();
-        //         app.mode = AppMode::DeleteConfirmation;
-        //     }
-        //     KeyCode::Char('a') if event.modifiers.contains(KeyModifiers::CONTROL) => {
-        //         app.mode = AppMode::AddContact;
-        //     }
-        //     KeyCode::Esc => {
-        //         if app.browse.search_input.is_empty() {
-        //             app.should_quit = true;
-        //         }
-        //         app.browse.search_input.clear();
-        //         app.browse.update_filter(&app.all_contacts);
-        //     }
-        //     KeyCode::Char(c) => {
-        //         app.browse.search_input.push(c);
-        //         app.browse.update_filter(&app.all_contacts);
-        //     }
-        //     KeyCode::Backspace => {
-        //         app.browse.search_input.pop();
-        //         app.browse.update_filter(&app.all_contacts);
-        //     }
-        //     _ => {}
-        // }
     }
 }

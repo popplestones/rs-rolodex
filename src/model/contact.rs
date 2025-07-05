@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-#[derive(Serialize, Debug, Default, Clone)]
+#[derive(Serialize, Debug, Default, Clone, PartialEq, Eq)]
 pub struct Contact {
     pub id: i64,
     pub name: String,

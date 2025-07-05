@@ -5,4 +5,5 @@ pub enum BrowseMessage {
     List(contact_list::message::ContactListMessage),
     Select,
     FilterUpdated,
+    Delete,
 }

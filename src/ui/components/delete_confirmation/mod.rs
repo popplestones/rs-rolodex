@@ -3,15 +3,31 @@ use crossterm::event::KeyEvent;
 use message::DeleteMessage;
 use ratatui::{prelude::*, widgets::*};
 
+use crate::model::Contact;
 use crate::ui::components::Component;
 use crate::ui::components::app::message::AppMessage;
 use crate::ui::layout::centered_rect;
 #[derive(Debug, Default)]
-pub struct DeleteConfirmation;
+
+pub struct DeleteConfirmation {
+    contact: Option<Contact>,
+}
 
 impl DeleteConfirmation {
     pub fn new() -> Self {
-        Self
+        Self { contact: None }
+    }
+
+    pub fn set_contact(&mut self, contact: Contact) {
+        self.contact = Some(contact);
+    }
+
+    pub fn clear_contact(&mut self) {
+        self.contact = None;
+    }
+
+    pub fn get_contact_id(&self) -> Option<i64> {
+        self.contact.as_ref().map(|c| c.id)
     }
 }
 

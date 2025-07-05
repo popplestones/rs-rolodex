@@ -1,1 +1,4 @@
-pub enum DeleteMessage {}
+pub enum DeleteMessage {
+    Confirm,
+    Cancel,
+}
