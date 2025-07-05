@@ -75,7 +75,6 @@ impl Component<AddMessage, AppMessage> for AddContactForm {
     }
 
     fn draw(&self, f: &mut Frame, _: Rect, _: bool) {
-        info!("Fields: {}", self.fields.len());
         let area = centered_rect(60, (self.fields.len() * 3 + 2) as u16, f.area());
 
         f.render_widget(Clear, area);

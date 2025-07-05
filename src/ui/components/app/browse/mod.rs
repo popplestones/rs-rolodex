@@ -31,6 +31,10 @@ impl Browse {
         }
     }
 
+    pub fn delete_contact(&mut self, id: i64) {
+        self.all_contacts.retain(|c| c.id != id);
+    }
+
     pub fn update_filter(&mut self) {
         let matcher = SkimMatcherV2::default();
 
@@ -61,14 +65,6 @@ impl Browse {
         self.contact_list.filtered_contacts = matches.into_iter().map(|(_, c)| c.clone()).collect();
         self.contact_list.selected_index = 0;
     }
-
-    pub fn get_selected_contact(&self) -> Option<Contact> {
-        if self.contact_list.selected_index < self.contact_list.filtered_contacts.len() {
-            Some(self.contact_list.filtered_contacts[self.contact_list.selected_index].clone())
-        } else {
-            None
-        }
-    }
 }
 impl Component<BrowseMessage, AppMessage> for Browse {
     fn draw(&self, f: &mut Frame, _rect: Rect, _is_focused: bool) {
@@ -87,20 +83,17 @@ impl Component<BrowseMessage, AppMessage> for Browse {
             BrowseMessage::Search(msg) => self.search.update(msg).map(AppMessage::Browse),
             BrowseMessage::List(msg) => self.contact_list.update(msg),
             BrowseMessage::Select => self
+                .contact_list
                 .get_selected_contact()
-                .clone()
                 .map(AppMessage::SelectContact),
             BrowseMessage::FilterUpdated => {
                 self.update_filter();
                 None
             }
-            BrowseMessage::Delete => {
-                if let Some(contact) = self.get_selected_contact() {
-                    Some(AppMessage::Delete(contact))
-                } else {
-                    None
-                }
-            }
+            BrowseMessage::Delete => self
+                .contact_list
+                .get_selected_contact()
+                .map(AppMessage::Delete),
         }
     }
 

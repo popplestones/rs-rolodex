@@ -6,6 +6,7 @@ use crate::{
 };
 use rand::Rng;
 use rusqlite::{Connection, OpenFlags};
+use tracing::info;
 
 pub struct Db {
     conn: Connection,
@@ -101,6 +102,7 @@ impl Db {
         self.conn
             .execute("DELETE FROM contacts WHERE id = ?", [id])
             .map_err(|e| AppError::Database(format!("delete: {e}")))?;
+        info!("Deleted contact with id: {}", id);
         Ok(())
     }
 }

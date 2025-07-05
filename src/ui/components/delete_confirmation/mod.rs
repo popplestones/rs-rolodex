@@ -1,5 +1,5 @@
 pub mod message;
-use crossterm::event::KeyEvent;
+use crossterm::event::{KeyCode, KeyEvent};
 use message::DeleteMessage;
 use ratatui::{prelude::*, widgets::*};
 
@@ -62,27 +62,18 @@ impl Component<DeleteMessage, AppMessage> for DeleteConfirmation {
         f.render_widget(paragraph, area);
     }
 
-    fn handle_key(&self, _event: KeyEvent) -> Option<DeleteMessage> {
-        // match event.code {
-        //     KeyCode::Char('y') => {
-        //         if let Some(contact) = app.selected_contact.take() {
-        //             app.db.delete_contact(contact.id)?;
-        //             app.all_contacts.retain(|c| c.id != contact.id);
-        //             app.browse.update_filter(&app.all_contacts);
-        //         }
-        //         app.mode = AppMode::Browse;
-        //     }
-        //     KeyCode::Char('n') => {
-        //         app.mode = AppMode::Browse;
-        //     }
-        //     KeyCode::Esc => {
-        //         app.mode = AppMode::Browse;
-        //     }
-        //     _ => {}
-        // }
-        None
+    fn handle_key(&self, event: KeyEvent) -> Option<DeleteMessage> {
+        match event.code {
+            KeyCode::Char('y') => Some(DeleteMessage::Confirm),
+            KeyCode::Char('n') => Some(DeleteMessage::Cancel),
+            KeyCode::Esc => Some(DeleteMessage::Cancel),
+            _ => None,
+        }
     }
-    fn update(&mut self, _message: DeleteMessage) -> Option<AppMessage> {
-        None
+    fn update(&mut self, message: DeleteMessage) -> Option<AppMessage> {
+        match message {
+            DeleteMessage::Confirm => Some(AppMessage::ConfirmDelete),
+            DeleteMessage::Cancel => Some(AppMessage::CancelDelete),
+        }
     }
 }

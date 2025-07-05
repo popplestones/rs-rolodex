@@ -15,11 +15,11 @@ use crate::{
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use message::AppMessage;
 use ratatui::prelude::*;
+use tracing::info;
 
 pub struct App {
     pub db: Db,
     pub selected_contact: Option<Contact>,
-    pub all_contacts: Vec<Contact>,
     pub mode: AppMode,
     pub should_quit: bool,
     pub browse: browse::Browse,
@@ -33,8 +33,7 @@ impl App {
         let browse = browse::Browse::new(&all_contacts);
         Ok(Self {
             db,
-            selected_contact: None,
-            all_contacts,
+            selected_contact: browse.contact_list.get_selected_contact(),
             mode: AppMode::Browse,
             should_quit: false,
             browse,
@@ -52,13 +51,21 @@ impl App {
             self.mode = AppMode::Browse;
         }
     }
-    // pub fn select_contact(&mut self) {
-    //     self.selected_contact =
-    //         Some(self.browse.filtered_contacts[self.browse.selected_index].clone());
-    // }
-    // pub fn unselect_contact(&mut self) {
-    //     self.selected_contact = None;
-    // }
+    pub fn delete_selected_contact(&mut self) -> Option<AppMessage> {
+        info!("Selected contact: {:?}", self.selected_contact);
+        if let Some(contact) = &self.selected_contact {
+            match self.db.delete_contact(contact.id) {
+                Ok(_) => {
+                    self.browse.delete_contact(contact.id);
+                    self.mode = AppMode::Browse;
+                    self.browse.update_filter();
+                    self.selected_contact = self.browse.contact_list.get_selected_contact();
+                }
+                Err(e) => self.set_error(e.to_string()),
+            }
+        }
+        None
+    }
 }
 
 impl Component<AppMessage, AppMessage> for App {
@@ -90,21 +97,7 @@ impl Component<AppMessage, AppMessage> for App {
                 self.delete_confirmation.set_contact(contact);
                 None
             }
-            AppMessage::ConfirmDelete => {
-                if let Some(id) = self.delete_confirmation.get_contact_id() {
-                    match self.db.delete_contact(id) {
-                        Ok(_) => {
-                            self.mode = AppMode::Browse;
-                            self.browse.update_filter();
-                            self.delete_confirmation.clear_contact();
-                            None
-                        }
-                        Err(e) => Some(AppMessage::Error(e.to_string())),
-                    }
-                } else {
-                    Some(AppMessage::Error("Contact not found".to_string()))
-                }
-            }
+            AppMessage::ConfirmDelete => self.delete_selected_contact(),
             AppMessage::CancelDelete => {
                 self.mode = AppMode::Browse;
                 self.delete_confirmation.clear_contact();
@@ -116,6 +109,7 @@ impl Component<AppMessage, AppMessage> for App {
             }
             AppMessage::Quit => {
                 self.should_quit = true;
+                self.selected_contact = None;
                 None
             }
         }

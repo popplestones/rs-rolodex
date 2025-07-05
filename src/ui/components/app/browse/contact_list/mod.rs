@@ -18,6 +18,13 @@ impl ContactList {
             selected_index: 0,
         }
     }
+    pub fn get_selected_contact(&self) -> Option<Contact> {
+        if self.selected_index < self.filtered_contacts.len() {
+            Some(self.filtered_contacts[self.selected_index].clone())
+        } else {
+            None
+        }
+    }
 }
 use crate::ui::components::app::message::AppMessage;
 impl Component<ContactListMessage, AppMessage> for ContactList {
@@ -72,26 +79,6 @@ impl Component<ContactListMessage, AppMessage> for ContactList {
             KeyCode::PageDown => Some(ContactListMessage::PgDown),
             _ => None,
         }
-
-        // match event.code {
-        //     KeyCode::Up => {
-        //         if self.selected_index > 0 {
-        //             self.selected_index -= 1;
-        //         }
-        //     }
-        //     KeyCode::Down => {
-        //         if self.selected_index < self.filtered_contacts.len() - 1 {
-        //             self.selected_index += 1;
-        //         }
-        //     }
-        //     KeyCode::Home => {
-        //         self.selected_index = 0;
-        //     }
-        //     KeyCode::End => {
-        //         self.selected_index = self.filtered_contacts.len() - 1;
-        //     }
-        //     _ => {}
-        // }
     }
 
     fn update(&mut self, message: ContactListMessage) -> Option<AppMessage> {
@@ -127,6 +114,6 @@ impl Component<ContactListMessage, AppMessage> for ContactList {
                 }
             }
         };
-        None
+        self.get_selected_contact().map(AppMessage::SelectContact)
     }
 }
