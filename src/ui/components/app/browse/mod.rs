@@ -1,11 +1,15 @@
 pub mod contact_list;
+pub mod message;
 pub mod search;
 
 use crossterm::event::{KeyCode, KeyEvent};
 use fuzzy_matcher::{FuzzyMatcher, skim::SkimMatcherV2};
 use ratatui::prelude::*;
 
-use crate::{model::Contact, ui::components::Component};
+use crate::{
+    model::Contact,
+    ui::components::{Component, app::browse::message::BrowseMessage},
+};
 use contact_list::ContactList;
 use search::Search;
 
@@ -13,34 +17,31 @@ use crate::ui::components::app::message::AppMessage;
 
 #[derive(Debug, Default)]
 pub struct Browse {
+    pub all_contacts: Vec<Contact>,
     pub contact_list: ContactList,
     pub search: Search,
-}
-
-pub enum BrowseMessage {
-    Search(search::message::SearchMessage),
-    List(contact_list::message::ContactListMessage),
-    Select,
 }
 
 impl Browse {
     pub fn new(contacts: &[Contact]) -> Self {
         Self {
+            all_contacts: contacts.to_vec(),
             contact_list: ContactList::new(contacts),
             search: Search::new(),
         }
     }
 
-    pub fn update_filter(&mut self, all_contacts: &[Contact]) {
+    pub fn update_filter(&mut self) {
         let matcher = SkimMatcherV2::default();
 
         if self.search.search_input.trim().is_empty() {
-            self.contact_list.filtered_contacts = all_contacts.to_vec();
+            self.contact_list.filtered_contacts = self.all_contacts.to_vec();
             self.contact_list.selected_index = 0;
             return;
         }
 
-        let mut matches: Vec<(i64, &Contact)> = all_contacts
+        let mut matches: Vec<(i64, &Contact)> = self
+            .all_contacts
             .iter()
             .filter_map(|c| {
                 let haystack = format!(
@@ -83,23 +84,36 @@ impl Component<BrowseMessage, AppMessage> for Browse {
 
     fn update(&mut self, message: BrowseMessage) -> Option<AppMessage> {
         match message {
-            BrowseMessage::Search(msg) => self.search.update(msg),
+            BrowseMessage::Search(msg) => self.search.update(msg).map(AppMessage::Browse),
             BrowseMessage::List(msg) => self.contact_list.update(msg),
             BrowseMessage::Select => self
                 .get_selected_contact()
                 .clone()
                 .map(AppMessage::SelectContact),
+            BrowseMessage::FilterUpdated => {
+                self.update_filter();
+                None
+            }
         }
     }
 
     fn handle_key(&self, event: KeyEvent) -> Option<BrowseMessage> {
+        // Handle Keys for the Contact List
         match event.code {
-            KeyCode::Enter => Some(BrowseMessage::Select),
-            KeyCode::Up | KeyCode::Down | KeyCode::Home | KeyCode::End => {
-                self.contact_list.handle_key(event).map(BrowseMessage::List)
+            KeyCode::Enter => return Some(BrowseMessage::Select),
+            KeyCode::Up
+            | KeyCode::Down
+            | KeyCode::Home
+            | KeyCode::End
+            | KeyCode::PageUp
+            | KeyCode::PageDown => {
+                return self.contact_list.handle_key(event).map(BrowseMessage::List);
             }
-            _ => None,
-        }
+            _ => None::<BrowseMessage>,
+        };
+
+        // Handle Keys for the Search
+        self.search.handle_key(event).map(BrowseMessage::Search)
         // match event.code {
         //     KeyCode::Enter => {
         //

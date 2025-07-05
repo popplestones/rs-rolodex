@@ -1,1 +1,1 @@
-pub type AddContactFormMessage = ();
+pub type AddMessage = ();

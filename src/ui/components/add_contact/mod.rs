@@ -1,5 +1,5 @@
 pub mod message;
-use message::AddContactFormMessage;
+use message::AddMessage;
 
 use crate::{
     model::Contact,
@@ -48,8 +48,8 @@ impl AddContactForm {
     }
 }
 use crate::ui::components::app::message::AppMessage;
-impl Component<AddContactFormMessage, AppMessage> for AddContactForm {
-    fn handle_key(&self, _event: KeyEvent) -> Option<AddContactFormMessage> {
+impl Component<AddMessage, AppMessage> for AddContactForm {
+    fn handle_key(&self, _event: KeyEvent) -> Option<AddMessage> {
         // match event.code {
         //     KeyCode::Tab => {
         //         if self.focused < self.fields.len() - 1 {
@@ -104,7 +104,7 @@ impl Component<AddContactFormMessage, AppMessage> for AddContactForm {
         }
     }
 
-    fn update(&mut self, _message: AddContactFormMessage) -> Option<AppMessage> {
+    fn update(&mut self, _message: AddMessage) -> Option<AppMessage> {
         todo!()
     }
 }

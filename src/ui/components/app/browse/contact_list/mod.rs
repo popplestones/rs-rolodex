@@ -1,5 +1,5 @@
 pub mod message;
-use crossterm::event::KeyEvent;
+use crossterm::event::{KeyCode, KeyEvent};
 use message::ContactListMessage;
 use ratatui::{prelude::*, widgets::*};
 
@@ -62,7 +62,17 @@ impl Component<ContactListMessage, AppMessage> for ContactList {
         );
     }
 
-    fn handle_key(&self, _event: KeyEvent) -> Option<ContactListMessage> {
+    fn handle_key(&self, event: KeyEvent) -> Option<ContactListMessage> {
+        match event.code {
+            KeyCode::Up => Some(ContactListMessage::Previous),
+            KeyCode::Down => Some(ContactListMessage::Next),
+            KeyCode::Home => Some(ContactListMessage::First),
+            KeyCode::End => Some(ContactListMessage::Last),
+            KeyCode::PageUp => Some(ContactListMessage::PgUp),
+            KeyCode::PageDown => Some(ContactListMessage::PgDown),
+            _ => None,
+        }
+
         // match event.code {
         //     KeyCode::Up => {
         //         if self.selected_index > 0 {
@@ -82,10 +92,41 @@ impl Component<ContactListMessage, AppMessage> for ContactList {
         //     }
         //     _ => {}
         // }
-        None
     }
 
-    fn update(&mut self, _message: ContactListMessage) -> Option<AppMessage> {
+    fn update(&mut self, message: ContactListMessage) -> Option<AppMessage> {
+        match message {
+            ContactListMessage::First => {
+                self.selected_index = 0;
+            }
+            ContactListMessage::Last => {
+                self.selected_index = self.filtered_contacts.len() - 1;
+            }
+            ContactListMessage::Previous => {
+                if self.selected_index > 0 {
+                    self.selected_index -= 1;
+                }
+            }
+            ContactListMessage::Next => {
+                if self.selected_index < self.filtered_contacts.len() - 1 {
+                    self.selected_index += 1;
+                }
+            }
+            ContactListMessage::PgUp => {
+                if self.selected_index < 10 {
+                    self.selected_index = 0;
+                } else {
+                    self.selected_index -= 10;
+                }
+            }
+            ContactListMessage::PgDown => {
+                if self.selected_index > self.filtered_contacts.len() - 10 {
+                    self.selected_index = self.filtered_contacts.len() - 1;
+                } else {
+                    self.selected_index += 10;
+                }
+            }
+        };
         None
     }
 }

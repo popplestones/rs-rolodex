@@ -2,7 +2,7 @@
 pub enum AppMode {
     #[default]
     Browse,
-    DeleteConfirmation,
-    AddContact,
+    Delete,
+    Add,
     Error,
 }

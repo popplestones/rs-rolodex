@@ -10,7 +10,7 @@ use crate::{
     },
     view::error,
 };
-use crossterm::event::KeyEvent;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use message::AppMessage;
 use ratatui::prelude::*;
 
@@ -68,14 +68,15 @@ impl Component<AppMessage, AppMessage> for App {
         // Step 2: overlay mode-specific view (like modals)
         match self.mode {
             AppMode::Error => error::draw(f, self),
-            AppMode::DeleteConfirmation => self.delete_confirmation.draw(f, f.area(), false),
-            AppMode::AddContact => self.add_contact_form.draw(f, f.area(), false),
+            AppMode::Delete => self.delete_confirmation.draw(f, f.area(), false),
+            AppMode::Add => self.add_contact_form.draw(f, f.area(), false),
             _ => {}
         }
     }
 
     fn update(&mut self, message: AppMessage) -> Option<AppMessage> {
         match message {
+            AppMessage::Add(msg) => self.add_contact_form.update(msg),
             AppMessage::Browse(msg) => self.browse.update(msg),
             AppMessage::SelectContact(contact) => {
                 self.selected_contact = Some(contact);
@@ -89,7 +90,24 @@ impl Component<AppMessage, AppMessage> for App {
         }
     }
 
-    fn handle_key(&self, _event: KeyEvent) -> Option<AppMessage> {
-        None
+    fn handle_key(&self, event: KeyEvent) -> Option<AppMessage> {
+        // Handle global app keys
+        match event.code {
+            KeyCode::Char('q') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+                return Some(AppMessage::Quit);
+            }
+            _ => {}
+        }
+
+        // Handle mode-specific keys
+        match self.mode {
+            AppMode::Browse => self.browse.handle_key(event).map(AppMessage::Browse),
+            AppMode::Add => self.add_contact_form.handle_key(event).map(AppMessage::Add),
+            AppMode::Delete => self
+                .delete_confirmation
+                .handle_key(event)
+                .map(AppMessage::Delete),
+            _ => None,
+        }
     }
 }
