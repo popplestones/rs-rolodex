@@ -1,6 +1,6 @@
 pub mod message;
 use crate::ui::components::{Component, app::message::AppMsg};
-use crossterm::event::{KeyCode, KeyEvent};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use message::TextFieldMsg;
 use ratatui::{prelude::*, widgets::*};
 use tracing::info;
@@ -58,6 +58,10 @@ impl Component<TextFieldMsg, AppMsg> for TextField {
                     self.value.remove(self.cursor);
                 }
             }
+            TextFieldMsg::Clear => {
+                self.value.clear();
+                self.cursor = 0;
+            }
         };
 
         None
@@ -65,10 +69,10 @@ impl Component<TextFieldMsg, AppMsg> for TextField {
     fn handle_key(&self, event: KeyEvent) -> Option<TextFieldMsg> {
         info!("key: {:?}", event.code);
         match event.code {
-            KeyCode::Left => {
-                info!("text_field::handle_key: left");
-                Some(TextFieldMsg::Left)
+            KeyCode::Char('c') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+                Some(TextFieldMsg::Clear)
             }
+            KeyCode::Left => Some(TextFieldMsg::Left),
             KeyCode::Right => Some(TextFieldMsg::Right),
             KeyCode::Home => Some(TextFieldMsg::Home),
             KeyCode::End => Some(TextFieldMsg::End),

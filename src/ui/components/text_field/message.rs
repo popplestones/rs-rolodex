@@ -7,4 +7,5 @@ pub enum TextFieldMsg {
     AddChar(char),
     Backspace,
     Delete,
+    Clear,
 }

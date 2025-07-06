@@ -100,6 +100,7 @@ impl Component<BrowseMsg, AppMsg> for Browse {
                 .get_selected_contact()
                 .map(|contact| AppMsg::OpenContactForm(Some(contact))),
             BrowseMsg::Add => Some(AppMsg::OpenContactForm(None)),
+            BrowseMsg::App(msg) => Some(*msg),
         }
     }
 

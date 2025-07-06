@@ -5,7 +5,10 @@ use crossterm::execute;
 use message::SearchMessage;
 use ratatui::{prelude::*, widgets::*};
 
-use crate::ui::components::{Component, app::browse::message::BrowseMsg};
+use crate::ui::components::{
+    Component,
+    app::{browse::message::BrowseMsg, message::AppMsg},
+};
 
 #[derive(Debug, Default)]
 pub struct Search {
@@ -45,6 +48,9 @@ impl Component<SearchMessage, BrowseMsg> for Search {
                 return Some(BrowseMsg::FilterUpdated);
             }
             SearchMessage::Clear => {
+                if self.search_input.is_empty() {
+                    return Some(BrowseMsg::app(AppMsg::Quit));
+                }
                 self.search_input.clear();
                 self.search_input_cursor = 0;
                 return Some(BrowseMsg::FilterUpdated);
