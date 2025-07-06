@@ -13,5 +13,6 @@ pub enum AppMsg {
     Browse(BrowseMsg),
     Error(String),
     SelectContact(Contact),
+    ActivateContact(Contact),
     Quit,
 }

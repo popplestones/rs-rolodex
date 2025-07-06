@@ -82,6 +82,10 @@ impl Component<BrowseMsg, AppMsg> for Browse {
         match message {
             BrowseMsg::Search(msg) => self.search.update(msg).map(AppMsg::Browse),
             BrowseMsg::List(msg) => self.contact_list.update(msg),
+            BrowseMsg::Activate => self
+                .contact_list
+                .get_selected_contact()
+                .map(AppMsg::ActivateContact),
             BrowseMsg::Select => self
                 .contact_list
                 .get_selected_contact()
@@ -102,7 +106,7 @@ impl Component<BrowseMsg, AppMsg> for Browse {
     fn handle_key(&self, event: KeyEvent) -> Option<BrowseMsg> {
         // Handle Keys for the Contact List
         match event.code {
-            KeyCode::Enter => return Some(BrowseMsg::Select),
+            KeyCode::Enter => return Some(BrowseMsg::Activate),
             KeyCode::Up
             | KeyCode::Down
             | KeyCode::Home

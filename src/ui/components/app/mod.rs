@@ -91,6 +91,11 @@ impl Component<AppMsg, AppMsg> for App {
                 self.selected_contact = Some(contact);
                 None
             }
+            AppMsg::ActivateContact(contact) => {
+                self.selected_contact = Some(contact);
+                self.should_quit = true;
+                None
+            }
             AppMsg::Delete(contact) => {
                 self.mode = AppMode::Delete;
                 self.delete_confirmation.set_contact(contact);
