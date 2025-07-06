@@ -10,7 +10,6 @@ use crate::{
 };
 use crossterm::event::KeyEvent;
 use ratatui::{prelude::*, widgets::*};
-use tracing::info;
 
 #[derive(Default)]
 pub struct AddContactForm {

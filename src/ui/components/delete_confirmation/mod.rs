@@ -32,36 +32,67 @@ impl DeleteConfirmation {
 }
 
 impl Component<DeleteMessage, AppMessage> for DeleteConfirmation {
-    fn draw(&self, f: &mut Frame, _rect: Rect, _is_focused: bool) {
-        let area = centered_rect(60, 20, f.area());
+    fn draw(&self, f: &mut Frame, rect: Rect, _is_focused: bool) {
+        let outer = centered_rect(60, 15, rect);
+        f.render_widget(Clear, outer);
 
-        // let contact = app.selected_contact.as_ref();
-        // let name = contact.map(|c| c.name.as_str()).unwrap_or("this contact");
-        let name = "this contact";
+        let Some(contact) = self.contact.as_ref() else {
+            return;
+        };
 
-        let text = vec![
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title("Confirm Delete")
+            .border_type(BorderType::Rounded)
+            .style(Style::default().bg(Color::Black).fg(Color::White));
+
+        f.render_widget(block, outer);
+
+        let inner = Rect {
+            x: outer.x + 4,
+            y: outer.y + 2,
+            width: outer.width.saturating_sub(8),
+            height: outer.height.saturating_sub(4),
+        };
+
+        let lines = vec![
+            Line::from(""), // top margin
             Line::from(Span::styled(
                 "Delete Contact",
                 Style::default().add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
-            Line::from(format!("Are you sure you want to delete '{name}'? [y/n]")),
+            Line::from("Are you sure you want to delete this contact?"),
+            Line::from(""),
+            Line::from(format!("Name:    {}", contact.name)),
+            Line::from(format!(
+                "Company: {}",
+                contact.company.as_deref().unwrap_or("-")
+            )),
+            Line::from(format!(
+                "Phone:   {}",
+                contact.phone.as_deref().unwrap_or("-")
+            )),
+            Line::from(format!(
+                "Email:   {}",
+                contact.email.as_deref().unwrap_or("-")
+            )),
+            Line::from(""),
+            Line::from(vec![
+                Span::raw("Press "),
+                Span::styled("Y", Style::default().add_modifier(Modifier::UNDERLINED)),
+                Span::raw("es or "),
+                Span::styled("N", Style::default().add_modifier(Modifier::UNDERLINED)),
+                Span::raw("o to cancel."),
+            ]),
         ];
 
-        let block = Block::default()
-            .borders(Borders::ALL)
-            .title("Confirm")
-            .border_type(BorderType::Rounded)
-            .style(Style::default().bg(Color::Black).fg(Color::White));
+        let paragraph = Paragraph::new(lines)
+            .alignment(Alignment::Left)
+            .wrap(Wrap { trim: true });
 
-        let paragraph = Paragraph::new(text)
-            .alignment(Alignment::Center)
-            .block(block);
-
-        f.render_widget(Clear, area);
-        f.render_widget(paragraph, area);
+        f.render_widget(paragraph, inner);
     }
-
     fn handle_key(&self, event: KeyEvent) -> Option<DeleteMessage> {
         match event.code {
             KeyCode::Char('y') => Some(DeleteMessage::Confirm),
