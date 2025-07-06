@@ -1,5 +1,5 @@
 pub mod message;
-use message::AddMessage;
+use message::ContactFormMsg;
 
 use crate::{
     model::Contact,
@@ -12,12 +12,13 @@ use crossterm::event::KeyEvent;
 use ratatui::{prelude::*, widgets::*};
 
 #[derive(Default)]
-pub struct AddContactForm {
+pub struct ContactForm {
     pub fields: Vec<TextField>,
     pub focused: usize,
+    pub editing: Option<i64>,
 }
 
-impl AddContactForm {
+impl ContactForm {
     pub fn new() -> Self {
         Self {
             fields: vec![
@@ -27,6 +28,7 @@ impl AddContactForm {
                 TextField::new("Phone"),
             ],
             focused: 0,
+            editing: None,
         }
     }
     pub fn to_contact(&self) -> Contact {
@@ -45,10 +47,18 @@ impl AddContactForm {
         }
         self.focused = 0;
     }
+
+    pub fn set_contact(&mut self, contact: Contact) {
+        self.editing = Some(contact.id);
+        self.fields[0].value = contact.name;
+        self.fields[1].value = contact.company.unwrap_or_default();
+        self.fields[2].value = contact.email.unwrap_or_default();
+        self.fields[3].value = contact.phone.unwrap_or_default();
+    }
 }
 use crate::ui::components::app::message::AppMessage;
-impl Component<AddMessage, AppMessage> for AddContactForm {
-    fn handle_key(&self, _event: KeyEvent) -> Option<AddMessage> {
+impl Component<ContactFormMsg, AppMessage> for ContactForm {
+    fn handle_key(&self, _event: KeyEvent) -> Option<ContactFormMsg> {
         // match event.code {
         //     KeyCode::Tab => {
         //         if self.focused < self.fields.len() - 1 {
@@ -102,7 +112,7 @@ impl Component<AddMessage, AppMessage> for AddContactForm {
         }
     }
 
-    fn update(&mut self, _message: AddMessage) -> Option<AppMessage> {
+    fn update(&mut self, _message: ContactFormMsg) -> Option<AppMessage> {
         todo!()
     }
 }

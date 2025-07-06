@@ -1,7 +1,7 @@
 use ratatui::{Frame, layout::Rect};
 
-pub mod add_contact;
 pub mod app;
+pub mod contact_form;
 pub mod delete_confirmation;
 pub mod text_field;
 

@@ -3,6 +3,6 @@ pub enum AppMode {
     #[default]
     Browse,
     Delete,
-    Add,
+    ContactForm,
     Error(String),
 }

@@ -8,7 +8,7 @@ use ratatui::prelude::*;
 
 use crate::{
     model::Contact,
-    ui::components::{Component, app::browse::message::BrowseMessage},
+    ui::components::{Component, app::browse::message::BrowseMsg},
 };
 use contact_list::ContactList;
 use search::Search;
@@ -66,7 +66,7 @@ impl Browse {
         self.contact_list.selected_index = 0;
     }
 }
-impl Component<BrowseMessage, AppMessage> for Browse {
+impl Component<BrowseMsg, AppMessage> for Browse {
     fn draw(&self, f: &mut Frame, _rect: Rect, _is_focused: bool) {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
@@ -78,44 +78,55 @@ impl Component<BrowseMessage, AppMessage> for Browse {
         self.contact_list.draw(f, chunks[1], _is_focused);
     }
 
-    fn update(&mut self, message: BrowseMessage) -> Option<AppMessage> {
+    fn update(&mut self, message: BrowseMsg) -> Option<AppMessage> {
         match message {
-            BrowseMessage::Search(msg) => self.search.update(msg).map(AppMessage::Browse),
-            BrowseMessage::List(msg) => self.contact_list.update(msg),
-            BrowseMessage::Select => self
+            BrowseMsg::Search(msg) => self.search.update(msg).map(AppMessage::Browse),
+            BrowseMsg::List(msg) => self.contact_list.update(msg),
+            BrowseMsg::Select => self
                 .contact_list
                 .get_selected_contact()
                 .map(AppMessage::SelectContact),
-            BrowseMessage::FilterUpdated => {
+            BrowseMsg::FilterUpdated => {
                 self.update_filter();
                 None
             }
-            BrowseMessage::Delete => self
+            BrowseMsg::Delete => self
                 .contact_list
                 .get_selected_contact()
                 .map(AppMessage::Delete),
+            BrowseMsg::Edit => self
+                .contact_list
+                .get_selected_contact()
+                .map(|contact| AppMessage::OpenContactForm(Some(contact))),
+            BrowseMsg::Add => Some(AppMessage::OpenContactForm(None)),
         }
     }
 
-    fn handle_key(&self, event: KeyEvent) -> Option<BrowseMessage> {
+    fn handle_key(&self, event: KeyEvent) -> Option<BrowseMsg> {
         // Handle Keys for the Contact List
         match event.code {
-            KeyCode::Enter => return Some(BrowseMessage::Select),
+            KeyCode::Enter => return Some(BrowseMsg::Select),
             KeyCode::Up
             | KeyCode::Down
             | KeyCode::Home
             | KeyCode::End
             | KeyCode::PageUp
             | KeyCode::PageDown => {
-                return self.contact_list.handle_key(event).map(BrowseMessage::List);
+                return self.contact_list.handle_key(event).map(BrowseMsg::List);
             }
             KeyCode::Char('d') if event.modifiers.contains(KeyModifiers::CONTROL) => {
-                return Some(BrowseMessage::Delete);
+                return Some(BrowseMsg::Delete);
             }
-            _ => None::<BrowseMessage>,
+            KeyCode::Char('a') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+                return Some(BrowseMsg::Add);
+            }
+            KeyCode::Char('e') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+                return Some(BrowseMsg::Edit);
+            }
+            _ => None::<BrowseMsg>,
         };
 
         // Handle Keys for the Search
-        self.search.handle_key(event).map(BrowseMessage::Search)
+        self.search.handle_key(event).map(BrowseMsg::Search)
     }
 }

@@ -5,7 +5,7 @@ use crossterm::execute;
 use message::SearchMessage;
 use ratatui::{prelude::*, widgets::*};
 
-use crate::ui::components::{Component, app::browse::message::BrowseMessage};
+use crate::ui::components::{Component, app::browse::message::BrowseMsg};
 
 #[derive(Debug, Default)]
 pub struct Search {
@@ -18,8 +18,8 @@ impl Search {
         Self::default()
     }
 }
-impl Component<SearchMessage, BrowseMessage> for Search {
-    fn update(&mut self, message: SearchMessage) -> Option<BrowseMessage> {
+impl Component<SearchMessage, BrowseMsg> for Search {
+    fn update(&mut self, message: SearchMessage) -> Option<BrowseMsg> {
         match message {
             SearchMessage::Left => {
                 if self.search_input_cursor > 0 {
@@ -36,23 +36,23 @@ impl Component<SearchMessage, BrowseMessage> for Search {
                     self.search_input.remove(self.search_input_cursor - 1);
                     self.search_input_cursor -= 1;
                 }
-                return Some(BrowseMessage::FilterUpdated);
+                return Some(BrowseMsg::FilterUpdated);
             }
             SearchMessage::Delete => {
                 if self.search_input_cursor < self.search_input.len() {
                     self.search_input.remove(self.search_input_cursor);
                 }
-                return Some(BrowseMessage::FilterUpdated);
+                return Some(BrowseMsg::FilterUpdated);
             }
             SearchMessage::Clear => {
                 self.search_input.clear();
                 self.search_input_cursor = 0;
-                return Some(BrowseMessage::FilterUpdated);
+                return Some(BrowseMsg::FilterUpdated);
             }
             SearchMessage::AddChar(c) => {
                 self.search_input.insert(self.search_input_cursor, c);
                 self.search_input_cursor += 1;
-                return Some(BrowseMessage::FilterUpdated);
+                return Some(BrowseMsg::FilterUpdated);
             }
         };
         None

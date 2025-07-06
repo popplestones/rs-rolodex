@@ -7,7 +7,7 @@ use crate::{
     model::Contact,
     ui::components::{
         Component,
-        add_contact::AddContactForm,
+        contact_form::ContactForm,
         delete_confirmation::{DeleteConfirmation, message::DeleteMessage},
     },
     view::error,
@@ -23,7 +23,7 @@ pub struct App {
     pub mode: AppMode,
     pub should_quit: bool,
     pub browse: browse::Browse,
-    pub add_contact_form: AddContactForm,
+    pub contact_form: ContactForm,
     pub delete_confirmation: DeleteConfirmation,
 }
 
@@ -37,7 +37,7 @@ impl App {
             mode: AppMode::Browse,
             should_quit: false,
             browse,
-            add_contact_form: AddContactForm::new(),
+            contact_form: ContactForm::new(),
             delete_confirmation: DeleteConfirmation::new(),
         })
     }
@@ -78,14 +78,14 @@ impl Component<AppMessage, AppMessage> for App {
         match self.mode {
             AppMode::Error(_) => error::draw(f, self),
             AppMode::Delete => self.delete_confirmation.draw(f, f.area(), false),
-            AppMode::Add => self.add_contact_form.draw(f, f.area(), false),
+            AppMode::ContactForm => self.contact_form.draw(f, f.area(), false),
             _ => {}
         }
     }
 
     fn update(&mut self, message: AppMessage) -> Option<AppMessage> {
         match message {
-            AppMessage::Add(msg) => self.add_contact_form.update(msg),
+            AppMessage::ContactForm(msg) => self.contact_form.update(msg),
             AppMessage::Browse(msg) => self.browse.update(msg),
             AppMessage::SelectContact(contact) => {
                 self.selected_contact = Some(contact);
@@ -95,6 +95,13 @@ impl Component<AppMessage, AppMessage> for App {
             AppMessage::Delete(contact) => {
                 self.mode = AppMode::Delete;
                 self.delete_confirmation.set_contact(contact);
+                None
+            }
+            AppMessage::OpenContactForm(contact) => {
+                self.mode = AppMode::ContactForm;
+                if let Some(contact) = contact {
+                    self.contact_form.set_contact(contact);
+                }
                 None
             }
             AppMessage::ConfirmDelete => self.delete_selected_contact(),
@@ -127,7 +134,10 @@ impl Component<AppMessage, AppMessage> for App {
         // Handle mode-specific keys
         match self.mode {
             AppMode::Browse => self.browse.handle_key(event).map(AppMessage::Browse),
-            AppMode::Add => self.add_contact_form.handle_key(event).map(AppMessage::Add),
+            AppMode::ContactForm => self
+                .contact_form
+                .handle_key(event)
+                .map(AppMessage::ContactForm),
             AppMode::Delete => match self.delete_confirmation.handle_key(event) {
                 Some(DeleteMessage::Confirm) => Some(AppMessage::ConfirmDelete),
                 Some(DeleteMessage::Cancel) => Some(AppMessage::CancelDelete),

@@ -1,13 +1,14 @@
 use crate::model::Contact;
-use crate::ui::components::add_contact::message::AddMessage;
-use crate::ui::components::app::browse::message::BrowseMessage;
+use crate::ui::components::app::browse::message::BrowseMsg;
+use crate::ui::components::contact_form::message::ContactFormMsg;
 
 pub enum AppMessage {
-    Add(AddMessage),
+    OpenContactForm(Option<Contact>),
+    ContactForm(ContactFormMsg),
     Delete(Contact),
     ConfirmDelete,
     CancelDelete,
-    Browse(BrowseMessage),
+    Browse(BrowseMsg),
     Error(String),
     SelectContact(Contact),
     Quit,
