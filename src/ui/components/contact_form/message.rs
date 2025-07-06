@@ -1,5 +1,9 @@
+use crossterm::event::KeyEvent;
+
 pub enum ContactFormMsg {
-    Save,
+    NextField,
+    PrevField,
+    Confirm,
     Cancel,
-    Update,
+    Input(KeyEvent, usize),
 }

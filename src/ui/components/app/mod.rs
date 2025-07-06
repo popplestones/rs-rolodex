@@ -118,6 +118,8 @@ impl Component<AppMessage, AppMessage> for App {
                 self.selected_contact = None;
                 None
             }
+            AppMessage::SaveContact(contact) => todo!(),
+            AppMessage::CancelForm => todo!(),
         }
     }
 

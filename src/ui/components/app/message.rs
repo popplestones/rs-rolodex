@@ -6,6 +6,8 @@ pub enum AppMessage {
     OpenContactForm(Option<Contact>),
     ContactForm(ContactFormMsg),
     Delete(Contact),
+    SaveContact(Contact),
+    CancelForm,
     ConfirmDelete,
     CancelDelete,
     Browse(BrowseMsg),

@@ -8,7 +8,7 @@ use crate::{
         layout::centered_rect,
     },
 };
-use crossterm::event::KeyEvent;
+use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
 
 #[derive(Default)]
@@ -58,29 +58,14 @@ impl ContactForm {
 }
 use crate::ui::components::app::message::AppMessage;
 impl Component<ContactFormMsg, AppMessage> for ContactForm {
-    fn handle_key(&self, _event: KeyEvent) -> Option<ContactFormMsg> {
-        // match event.code {
-        //     KeyCode::Tab => {
-        //         if self.focused < self.fields.len() - 1 {
-        //             self.focused += 1;
-        //         } else {
-        //             self.focused = 0;
-        //         }
-        //     }
-        //     KeyCode::BackTab => {
-        //         if self.focused > 0 {
-        //             self.focused -= 1;
-        //         } else {
-        //             self.focused = self.fields.len() - 1;
-        //         }
-        //     }
-        //     _ => {
-        //         if let Some(field) = self.fields.get_mut(self.focused) {
-        //             field.handle_key(event);
-        //         }
-        //     }
-        // }
-        None
+    fn handle_key(&self, event: KeyEvent) -> Option<ContactFormMsg> {
+        match event.code {
+            KeyCode::Tab => Some(ContactFormMsg::NextField),
+            KeyCode::BackTab => Some(ContactFormMsg::PrevField),
+            KeyCode::Enter => Some(ContactFormMsg::Confirm),
+            KeyCode::Esc => Some(ContactFormMsg::Cancel),
+            _ => Some(ContactFormMsg::Input(event, self.focused)),
+        }
     }
 
     fn draw(&self, f: &mut Frame, _: Rect, _: bool) {
@@ -112,8 +97,39 @@ impl Component<ContactFormMsg, AppMessage> for ContactForm {
         }
     }
 
-    fn update(&mut self, _message: ContactFormMsg) -> Option<AppMessage> {
-        todo!()
+    fn update(&mut self, message: ContactFormMsg) -> Option<AppMessage> {
+        match message {
+            ContactFormMsg::NextField => {
+                self.focused += 1;
+                if self.focused >= self.fields.len() {
+                    self.focused = 0;
+                }
+                None
+            }
+            ContactFormMsg::PrevField => {
+                if self.focused == 0 {
+                    self.focused = self.fields.len() - 1;
+                } else {
+                    self.focused -= 1;
+                }
+                None
+            }
+            ContactFormMsg::Confirm => {
+                self.editing = None;
+                Some(AppMessage::SaveContact(self.to_contact()))
+            }
+            ContactFormMsg::Cancel => {
+                self.editing = None;
+                Some(AppMessage::CancelForm)
+            }
+            ContactFormMsg::Input(event, index) => {
+                // Send the input to the focused field
+                self.fields[index].handle_key(event);
+                None
+            }
+        };
+
+        None
     }
 }
 fn opt(value: &str) -> Option<String> {
