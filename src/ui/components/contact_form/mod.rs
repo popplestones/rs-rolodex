@@ -102,7 +102,6 @@ impl Component<ContactFormMsg, AppMsg> for ContactForm {
     fn update(&mut self, message: ContactFormMsg) -> Option<AppMsg> {
         match message {
             ContactFormMsg::NextField => {
-                info!("Next field");
                 self.focused += 1;
                 if self.focused >= self.fields.len() {
                     self.focused = 0;
@@ -111,7 +110,6 @@ impl Component<ContactFormMsg, AppMsg> for ContactForm {
                 None
             }
             ContactFormMsg::PrevField => {
-                info!("Previous field");
                 if self.focused == 0 {
                     self.focused = self.fields.len() - 1;
                 } else {
@@ -120,13 +118,8 @@ impl Component<ContactFormMsg, AppMsg> for ContactForm {
                 self.fields[self.focused].end();
                 None
             }
-            ContactFormMsg::Confirm => {
-                info!("Confirm");
-                self.editing = None;
-                Some(AppMsg::SaveContact(self.to_contact()))
-            }
+            ContactFormMsg::Confirm => Some(AppMsg::SaveContact(self.to_contact())),
             ContactFormMsg::Cancel => {
-                info!("Cancel");
                 self.editing = None;
                 Some(AppMsg::CancelForm)
             }

@@ -40,7 +40,7 @@ impl Component<ContactListMessage, AppMsg> for ContactList {
                 let email = c.email.as_deref().unwrap_or("<none>");
                 let phone = c.phone.as_deref().unwrap_or("<none>");
 
-                let line = format!("{:<20} {:<20} {:<25} {:<12}", c.name, company, email, phone);
+                let line = format!("{:<20} {:<20} {:<30} {:<12}", c.name, company, email, phone);
                 ListItem::new(line)
             })
             .collect();
@@ -92,7 +92,7 @@ impl Component<ContactListMessage, AppMsg> for ContactList {
             }
             ContactListMessage::Last => {
                 info!("Select last contact");
-                self.selected_index = self.filtered_contacts.len() - 1;
+                self.selected_index = self.filtered_contacts.len().saturating_sub(1);
             }
             ContactListMessage::Previous => {
                 info!("Select previous contact");
@@ -102,7 +102,7 @@ impl Component<ContactListMessage, AppMsg> for ContactList {
             }
             ContactListMessage::Next => {
                 info!("Select next contact");
-                if self.selected_index < self.filtered_contacts.len() - 1 {
+                if self.selected_index < self.filtered_contacts.len().saturating_sub(1) {
                     self.selected_index += 1;
                 }
             }
@@ -116,8 +116,8 @@ impl Component<ContactListMessage, AppMsg> for ContactList {
             }
             ContactListMessage::PgDown => {
                 info!("Select page down contact");
-                if self.selected_index > self.filtered_contacts.len() - 10 {
-                    self.selected_index = self.filtered_contacts.len() - 1;
+                if self.selected_index > self.filtered_contacts.len().saturating_sub(10) {
+                    self.selected_index = self.filtered_contacts.len().saturating_sub(1);
                 } else {
                     self.selected_index += 10;
                 }

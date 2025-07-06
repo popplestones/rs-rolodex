@@ -4,6 +4,7 @@ use crossterm::event::KeyCode;
 use crossterm::execute;
 use message::SearchMessage;
 use ratatui::{prelude::*, widgets::*};
+use tracing::info;
 
 use crate::ui::components::{
     Component,
@@ -61,6 +62,7 @@ impl Component<SearchMessage, BrowseMsg> for Search {
                 return Some(BrowseMsg::FilterUpdated);
             }
         };
+        info!("Updated search input: {:?}", self.search_input);
         None
     }
 

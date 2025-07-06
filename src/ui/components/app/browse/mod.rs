@@ -5,6 +5,7 @@ pub mod search;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use fuzzy_matcher::{FuzzyMatcher, skim::SkimMatcherV2};
 use ratatui::prelude::*;
+use tracing::info;
 
 use crate::{
     model::Contact,
@@ -117,12 +118,15 @@ impl Component<BrowseMsg, AppMsg> for Browse {
                 return self.contact_list.handle_key(event).map(BrowseMsg::List);
             }
             KeyCode::Char('d') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+                info!("Ctrl+D pressed - Opening Delete Modal");
                 return Some(BrowseMsg::Delete);
             }
             KeyCode::Char('a') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+                info!("Ctrl+A pressed - Opening Add Contact Modal");
                 return Some(BrowseMsg::Add);
             }
             KeyCode::Char('e') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+                info!("Ctrl+E pressed - Opening Edit Contact Modal");
                 return Some(BrowseMsg::Edit);
             }
             _ => None::<BrowseMsg>,

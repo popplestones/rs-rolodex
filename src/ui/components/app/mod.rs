@@ -102,8 +102,11 @@ impl Component<AppMsg, AppMsg> for App {
                 None
             }
             AppMsg::OpenContactForm(contact) => {
+                info!("Open contact form with contact: {contact:?}");
                 self.mode = AppMode::ContactForm;
                 if let Some(contact) = contact {
+                    info!("Set editing to {}", contact.id);
+                    self.contact_form.editing = Some(contact.id);
                     self.contact_form.set_contact(contact);
                 }
                 None
@@ -126,6 +129,7 @@ impl Component<AppMsg, AppMsg> for App {
             AppMsg::SaveContact(contact) => {
                 info!("Save contact: {:?}", contact);
                 if let Some(id) = self.contact_form.editing {
+                    info!("We have an ID, so we're updating");
                     match self.db.update_contact(id, contact) {
                         Ok(_) => {
                             self.browse.update_filter();
@@ -142,6 +146,7 @@ impl Component<AppMsg, AppMsg> for App {
                         Err(e) => self.set_error(e.to_string()),
                     }
                 } else {
+                    info!("We don't have an ID, so we're adding");
                     match self.db.add_contact(contact) {
                         Ok(_) => {
                             self.browse.update_filter();
@@ -172,6 +177,7 @@ impl Component<AppMsg, AppMsg> for App {
         // Handle global app keys
         match event.code {
             KeyCode::Char('q') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+                info!("Ctrl+Q pressed - Quitting");
                 return Some(AppMsg::Quit);
             }
             _ => {}

@@ -11,6 +11,7 @@ use crate::{
 };
 use crossterm::event::{self, Event};
 use ratatui::prelude::*;
+use tracing::debug;
 
 pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, db: Db) -> Result<Option<Contact>> {
     let mut app = App::new(db)?;
@@ -36,6 +37,7 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, db: Db) -> Result<Option<
         }
 
         if app.should_quit {
+            debug!("Quitting");
             break;
         }
     }
