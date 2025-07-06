@@ -2,6 +2,7 @@ pub mod message;
 use crossterm::event::{KeyCode, KeyEvent};
 use message::ContactListMessage;
 use ratatui::{prelude::*, widgets::*};
+use tracing::info;
 
 use crate::{model::Contact, ui::components::Component};
 
@@ -84,22 +85,27 @@ impl Component<ContactListMessage, AppMessage> for ContactList {
     fn update(&mut self, message: ContactListMessage) -> Option<AppMessage> {
         match message {
             ContactListMessage::First => {
+                info!("Select first contact");
                 self.selected_index = 0;
             }
             ContactListMessage::Last => {
+                info!("Select last contact");
                 self.selected_index = self.filtered_contacts.len() - 1;
             }
             ContactListMessage::Previous => {
+                info!("Select previous contact");
                 if self.selected_index > 0 {
                     self.selected_index -= 1;
                 }
             }
             ContactListMessage::Next => {
+                info!("Select next contact");
                 if self.selected_index < self.filtered_contacts.len() - 1 {
                     self.selected_index += 1;
                 }
             }
             ContactListMessage::PgUp => {
+                info!("Select page up contact");
                 if self.selected_index < 10 {
                     self.selected_index = 0;
                 } else {
@@ -107,6 +113,7 @@ impl Component<ContactListMessage, AppMessage> for ContactList {
                 }
             }
             ContactListMessage::PgDown => {
+                info!("Select page down contact");
                 if self.selected_index > self.filtered_contacts.len() - 10 {
                     self.selected_index = self.filtered_contacts.len() - 1;
                 } else {

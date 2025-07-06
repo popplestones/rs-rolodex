@@ -89,7 +89,6 @@ impl Component<AppMessage, AppMessage> for App {
             AppMessage::Browse(msg) => self.browse.update(msg),
             AppMessage::SelectContact(contact) => {
                 self.selected_contact = Some(contact);
-                self.should_quit = true;
                 None
             }
             AppMessage::Delete(contact) => {
