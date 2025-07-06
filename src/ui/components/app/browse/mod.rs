@@ -13,7 +13,7 @@ use crate::{
 use contact_list::ContactList;
 use search::Search;
 
-use crate::ui::components::app::message::AppMessage;
+use crate::ui::components::app::message::AppMsg;
 
 #[derive(Debug, Default)]
 pub struct Browse {
@@ -66,7 +66,7 @@ impl Browse {
         self.contact_list.selected_index = 0;
     }
 }
-impl Component<BrowseMsg, AppMessage> for Browse {
+impl Component<BrowseMsg, AppMsg> for Browse {
     fn draw(&self, f: &mut Frame, _rect: Rect, _is_focused: bool) {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
@@ -78,27 +78,24 @@ impl Component<BrowseMsg, AppMessage> for Browse {
         self.contact_list.draw(f, chunks[1], _is_focused);
     }
 
-    fn update(&mut self, message: BrowseMsg) -> Option<AppMessage> {
+    fn update(&mut self, message: BrowseMsg) -> Option<AppMsg> {
         match message {
-            BrowseMsg::Search(msg) => self.search.update(msg).map(AppMessage::Browse),
+            BrowseMsg::Search(msg) => self.search.update(msg).map(AppMsg::Browse),
             BrowseMsg::List(msg) => self.contact_list.update(msg),
             BrowseMsg::Select => self
                 .contact_list
                 .get_selected_contact()
-                .map(AppMessage::SelectContact),
+                .map(AppMsg::SelectContact),
             BrowseMsg::FilterUpdated => {
                 self.update_filter();
                 None
             }
-            BrowseMsg::Delete => self
-                .contact_list
-                .get_selected_contact()
-                .map(AppMessage::Delete),
+            BrowseMsg::Delete => self.contact_list.get_selected_contact().map(AppMsg::Delete),
             BrowseMsg::Edit => self
                 .contact_list
                 .get_selected_contact()
-                .map(|contact| AppMessage::OpenContactForm(Some(contact))),
-            BrowseMsg::Add => Some(AppMessage::OpenContactForm(None)),
+                .map(|contact| AppMsg::OpenContactForm(Some(contact))),
+            BrowseMsg::Add => Some(AppMsg::OpenContactForm(None)),
         }
     }
 

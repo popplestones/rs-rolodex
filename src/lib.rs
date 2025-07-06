@@ -2,7 +2,6 @@ pub mod cli;
 pub mod config;
 pub mod db;
 pub mod error;
-pub mod input;
 pub mod mode;
 pub mod model;
 pub mod run;

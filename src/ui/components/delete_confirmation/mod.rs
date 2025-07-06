@@ -5,7 +5,7 @@ use ratatui::{prelude::*, widgets::*};
 
 use crate::model::Contact;
 use crate::ui::components::Component;
-use crate::ui::components::app::message::AppMessage;
+use crate::ui::components::app::message::AppMsg;
 use crate::ui::layout::centered_rect;
 #[derive(Debug, Default)]
 
@@ -31,7 +31,7 @@ impl DeleteConfirmation {
     }
 }
 
-impl Component<DeleteMessage, AppMessage> for DeleteConfirmation {
+impl Component<DeleteMessage, AppMsg> for DeleteConfirmation {
     fn draw(&self, f: &mut Frame, rect: Rect, _is_focused: bool) {
         let outer = centered_rect(60, 15, rect);
         f.render_widget(Clear, outer);
@@ -101,10 +101,10 @@ impl Component<DeleteMessage, AppMessage> for DeleteConfirmation {
             _ => None,
         }
     }
-    fn update(&mut self, message: DeleteMessage) -> Option<AppMessage> {
+    fn update(&mut self, message: DeleteMessage) -> Option<AppMsg> {
         match message {
-            DeleteMessage::Confirm => Some(AppMessage::ConfirmDelete),
-            DeleteMessage::Cancel => Some(AppMessage::CancelDelete),
+            DeleteMessage::Confirm => Some(AppMsg::ConfirmDelete),
+            DeleteMessage::Cancel => Some(AppMsg::CancelDelete),
         }
     }
 }

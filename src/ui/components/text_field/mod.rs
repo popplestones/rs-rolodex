@@ -1,8 +1,9 @@
 pub mod message;
-use crate::ui::components::Component;
-use crossterm::event::KeyEvent;
-use message::TextFieldMessage;
+use crate::ui::components::{Component, app::message::AppMsg};
+use crossterm::event::{KeyCode, KeyEvent};
+use message::TextFieldMsg;
 use ratatui::{prelude::*, widgets::*};
+use tracing::info;
 
 #[derive(Debug, Default)]
 pub struct TextField {
@@ -18,48 +19,64 @@ impl TextField {
             ..Default::default()
         }
     }
+    pub fn end(&mut self) {
+        self.cursor = self.value.len();
+    }
 }
-use crate::ui::components::app::message::AppMessage;
-impl Component<TextFieldMessage, AppMessage> for TextField {
-    fn update(&mut self, _message: TextFieldMessage) -> Option<AppMessage> {
+impl Component<TextFieldMsg, AppMsg> for TextField {
+    fn update(&mut self, message: TextFieldMsg) -> Option<AppMsg> {
+        info!("update: {:?}", message);
+        match message {
+            TextFieldMsg::Left => {
+                if self.cursor > 0 {
+                    self.cursor -= 1;
+                }
+            }
+            TextFieldMsg::Right => {
+                if self.cursor < self.value.len() {
+                    self.cursor += 1;
+                }
+            }
+            TextFieldMsg::Home => {
+                self.cursor = 0;
+            }
+            TextFieldMsg::End => {
+                self.end();
+            }
+            TextFieldMsg::AddChar(c) => {
+                self.value.insert(self.cursor, c);
+                self.cursor += 1;
+            }
+            TextFieldMsg::Backspace => {
+                if self.cursor > 0 {
+                    self.value.remove(self.cursor - 1);
+                    self.cursor -= 1;
+                }
+            }
+            TextFieldMsg::Delete => {
+                if self.cursor < self.value.len() {
+                    self.value.remove(self.cursor);
+                }
+            }
+        };
+
         None
     }
-    fn handle_key(&self, _event: KeyEvent) -> Option<TextFieldMessage> {
-        // match event.code {
-        //     KeyCode::Char(c) => {
-        //         self.value.insert(self.cursor, c);
-        //         self.cursor += 1;
-        //     }
-        //     KeyCode::Backspace => {
-        //         if self.cursor > 0 {
-        //             self.cursor -= 1;
-        //             self.value.remove(self.cursor);
-        //         }
-        //     }
-        //     KeyCode::Left => {
-        //         if self.cursor > 0 {
-        //             self.cursor -= 1;
-        //         }
-        //     }
-        //     KeyCode::Right => {
-        //         if self.cursor < self.value.len() {
-        //             self.cursor += 1;
-        //         }
-        //     }
-        //     KeyCode::End => {
-        //         self.cursor = self.value.len();
-        //     }
-        //     KeyCode::Home => {
-        //         self.cursor = 0;
-        //     }
-        //     KeyCode::Delete => {
-        //         if self.cursor < self.value.len() {
-        //             self.value.remove(self.cursor);
-        //         }
-        //     }
-        //     _ => {}
-        // }
-        None
+    fn handle_key(&self, event: KeyEvent) -> Option<TextFieldMsg> {
+        info!("key: {:?}", event.code);
+        match event.code {
+            KeyCode::Left => {
+                info!("text_field::handle_key: left");
+                Some(TextFieldMsg::Left)
+            }
+            KeyCode::Right => Some(TextFieldMsg::Right),
+            KeyCode::Home => Some(TextFieldMsg::Home),
+            KeyCode::End => Some(TextFieldMsg::End),
+            KeyCode::Char(c) => Some(TextFieldMsg::AddChar(c)),
+            KeyCode::Backspace => Some(TextFieldMsg::Backspace),
+            KeyCode::Delete => Some(TextFieldMsg::Delete),
+            _ => None,
+        }
     }
     fn draw(&self, f: &mut Frame, area: Rect, is_focused: bool) {
         let block = Block::default()

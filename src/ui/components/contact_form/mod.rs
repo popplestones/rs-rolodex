@@ -1,10 +1,11 @@
 pub mod message;
 use message::ContactFormMsg;
+use tracing::info;
 
 use crate::{
     model::Contact,
     ui::{
-        components::{Component, text_field::TextField},
+        components::{Component, app::message::AppMsg, text_field::TextField},
         layout::centered_rect,
     },
 };
@@ -54,10 +55,11 @@ impl ContactForm {
         self.fields[1].value = contact.company.unwrap_or_default();
         self.fields[2].value = contact.email.unwrap_or_default();
         self.fields[3].value = contact.phone.unwrap_or_default();
+        self.focused = 0;
+        self.fields[0].end();
     }
 }
-use crate::ui::components::app::message::AppMessage;
-impl Component<ContactFormMsg, AppMessage> for ContactForm {
+impl Component<ContactFormMsg, AppMsg> for ContactForm {
     fn handle_key(&self, event: KeyEvent) -> Option<ContactFormMsg> {
         match event.code {
             KeyCode::Tab => Some(ContactFormMsg::NextField),
@@ -97,39 +99,54 @@ impl Component<ContactFormMsg, AppMessage> for ContactForm {
         }
     }
 
-    fn update(&mut self, message: ContactFormMsg) -> Option<AppMessage> {
+    fn update(&mut self, message: ContactFormMsg) -> Option<AppMsg> {
         match message {
             ContactFormMsg::NextField => {
+                info!("Next field");
                 self.focused += 1;
                 if self.focused >= self.fields.len() {
                     self.focused = 0;
                 }
+                self.fields[self.focused].end();
                 None
             }
             ContactFormMsg::PrevField => {
+                info!("Previous field");
                 if self.focused == 0 {
                     self.focused = self.fields.len() - 1;
                 } else {
                     self.focused -= 1;
                 }
+                self.fields[self.focused].end();
                 None
             }
             ContactFormMsg::Confirm => {
+                info!("Confirm");
                 self.editing = None;
-                Some(AppMessage::SaveContact(self.to_contact()))
+                Some(AppMsg::SaveContact(self.to_contact()))
             }
             ContactFormMsg::Cancel => {
+                info!("Cancel");
                 self.editing = None;
-                Some(AppMessage::CancelForm)
+                Some(AppMsg::CancelForm)
             }
             ContactFormMsg::Input(event, index) => {
-                // Send the input to the focused field
-                self.fields[index].handle_key(event);
-                None
+                if let Some(field) = self.fields.get_mut(index) {
+                    field
+                        .handle_key(event)
+                        .map(|msg| AppMsg::ContactForm(ContactFormMsg::TextField(index, msg)))
+                } else {
+                    None
+                }
             }
-        };
-
-        None
+            ContactFormMsg::TextField(index, msg) => {
+                if let Some(field) = self.fields.get_mut(index) {
+                    field.update(msg)
+                } else {
+                    None
+                }
+            }
+        }
     }
 }
 fn opt(value: &str) -> Option<String> {

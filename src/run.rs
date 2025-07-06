@@ -6,7 +6,7 @@ use crate::{
     model::Contact,
     ui::components::{
         Component,
-        app::{App, message::AppMessage},
+        app::{App, message::AppMsg},
     },
 };
 use crossterm::event::{self, Event};
@@ -42,7 +42,7 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, db: Db) -> Result<Option<
     Ok(app.selected_contact)
 }
 
-fn propagate(app: &mut App, mut msg: AppMessage) {
+fn propagate(app: &mut App, mut msg: AppMsg) {
     while let Some(next) = app.update(msg) {
         msg = next;
     }

@@ -4,7 +4,10 @@ use message::ContactListMessage;
 use ratatui::{prelude::*, widgets::*};
 use tracing::info;
 
-use crate::{model::Contact, ui::components::Component};
+use crate::{
+    model::Contact,
+    ui::components::{Component, app::message::AppMsg},
+};
 
 #[derive(Debug, Default)]
 pub struct ContactList {
@@ -27,8 +30,7 @@ impl ContactList {
         }
     }
 }
-use crate::ui::components::app::message::AppMessage;
-impl Component<ContactListMessage, AppMessage> for ContactList {
+impl Component<ContactListMessage, AppMsg> for ContactList {
     fn draw(&self, f: &mut Frame, rect: Rect, _is_focused: bool) {
         let items: Vec<ListItem> = self
             .filtered_contacts
@@ -82,7 +84,7 @@ impl Component<ContactListMessage, AppMessage> for ContactList {
         }
     }
 
-    fn update(&mut self, message: ContactListMessage) -> Option<AppMessage> {
+    fn update(&mut self, message: ContactListMessage) -> Option<AppMsg> {
         match message {
             ContactListMessage::First => {
                 info!("Select first contact");
@@ -121,6 +123,6 @@ impl Component<ContactListMessage, AppMessage> for ContactList {
                 }
             }
         };
-        self.get_selected_contact().map(AppMessage::SelectContact)
+        self.get_selected_contact().map(AppMsg::SelectContact)
     }
 }
