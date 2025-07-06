@@ -84,6 +84,23 @@ impl Db {
 
         Ok(())
     }
+
+    pub fn add_contact(&self, contact: Contact) -> Result<()> {
+        info!("Save contact: {:?}", contact);
+        self.conn
+            .execute(
+                "INSERT INTO contacts (name, email, phone, company) VALUES (?, ?, ?, ?)",
+                (
+                    &contact.name,
+                    &contact.email,
+                    &contact.phone,
+                    &contact.company,
+                ),
+            )
+            .map_err(|e| AppError::Database(format!("insert: {e}")))?;
+        Ok(())
+    }
+
     pub fn load_customers(&self) -> Result<Vec<Contact>> {
         let mut stmt = self
             .conn
@@ -98,11 +115,29 @@ impl Db {
 
         Ok(rows)
     }
+
     pub fn delete_contact(&self, id: i64) -> Result<()> {
         self.conn
             .execute("DELETE FROM contacts WHERE id = ?", [id])
             .map_err(|e| AppError::Database(format!("delete: {e}")))?;
         info!("Deleted contact with id: {}", id);
+        Ok(())
+    }
+
+    pub fn update_contact(&self, id: i64, contact: Contact) -> Result<()> {
+        self.conn
+            .execute(
+                "UPDATE contacts SET name = ?, email = ?, phone = ?, company = ? WHERE id = ?",
+                (
+                    &contact.name,
+                    &contact.email,
+                    &contact.phone,
+                    &contact.company,
+                    id,
+                ),
+            )
+            .map_err(|e| AppError::Database(format!("update: {e}")))?;
+        info!("Updated contact with id: {}", id);
         Ok(())
     }
 }

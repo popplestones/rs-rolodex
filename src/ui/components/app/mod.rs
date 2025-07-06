@@ -118,7 +118,43 @@ impl Component<AppMsg, AppMsg> for App {
                 self.selected_contact = None;
                 None
             }
-            AppMsg::SaveContact(contact) => todo!(),
+            AppMsg::SaveContact(contact) => {
+                info!("Save contact: {:?}", contact);
+                if let Some(id) = self.contact_form.editing {
+                    match self.db.update_contact(id, contact) {
+                        Ok(_) => {
+                            self.browse.update_filter();
+                            self.selected_contact = self.browse.contact_list.get_selected_contact();
+                            self.mode = AppMode::Browse;
+                            self.contact_form = ContactForm::new();
+                            match self.db.load_customers() {
+                                Ok(all_contacts) => {
+                                    self.browse = browse::Browse::new(&all_contacts);
+                                }
+                                Err(e) => self.set_error(e.to_string()),
+                            }
+                        }
+                        Err(e) => self.set_error(e.to_string()),
+                    }
+                } else {
+                    match self.db.add_contact(contact) {
+                        Ok(_) => {
+                            self.browse.update_filter();
+                            self.selected_contact = self.browse.contact_list.get_selected_contact();
+                            self.mode = AppMode::Browse;
+                            self.contact_form = ContactForm::new();
+                            match self.db.load_customers() {
+                                Ok(all_contacts) => {
+                                    self.browse = browse::Browse::new(&all_contacts);
+                                }
+                                Err(e) => self.set_error(e.to_string()),
+                            }
+                        }
+                        Err(e) => self.set_error(e.to_string()),
+                    }
+                }
+                None
+            }
             AppMsg::CancelForm => {
                 self.contact_form = ContactForm::new();
                 self.mode = AppMode::Browse;
