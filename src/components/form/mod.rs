@@ -1,17 +1,25 @@
 use crate::{
-    components::input::{Input, InputMsg, InputOutput},
+    components::{
+        component::opt,
+        input::{Input, InputMsg, InputOutput},
+    },
     model::Contact,
 };
 
 pub enum FormMsg {
-    InputOutput(FormField, InputOutput),
     Input(InputMsg),
     Next,
     Previous,
+    Submit,
+    Cancel,
 }
 
-pub enum FormOutput {}
+pub enum FormOutput {
+    Submitted(Contact),
+    Cancelled,
+}
 
+#[derive(Clone)]
 pub enum FormField {
     Name,
     Company,
@@ -53,27 +61,16 @@ impl Form {
         map: impl Fn(FormOutput) -> ParentMsg,
     ) -> Option<ParentMsg> {
         match msg {
-            FormMsg::InputOutput(index, InputOutput::Changed(val)) => {
-                match index {
-                    FormField::Name => self.contact.name = val,
-                    FormField::Company => self.contact.company = Some(val),
-                    FormField::Email => self.contact.email = Some(val),
-                    FormField::Phone => self.contact.phone = Some(val),
-                }
-                None
-            }
             FormMsg::Input(input_msg) => {
                 if let Some(field) = self.fields.get_mut(self.focused) {
-                    let field_key = FIELD_ORDER[self.focused];
+                    let field_key = &FIELD_ORDER[self.focused];
 
-                    if let Some(InputOutput::Changed(val)) =
-                        field.update(input_msg, |_| InputOutput::Changed("".to_string()))
-                    {
+                    if let Some(InputOutput::Changed(val)) = field.update(input_msg, |out| out) {
                         match field_key {
                             FormField::Name => self.contact.name = val,
-                            FormField::Company => self.contact.company = Some(val),
-                            FormField::Email => self.contact.email = Some(val),
-                            FormField::Phone => self.contact.phone = Some(val),
+                            FormField::Company => self.contact.company = opt(val),
+                            FormField::Email => self.contact.email = opt(val),
+                            FormField::Phone => self.contact.phone = opt(val),
                         }
                     }
                 }
@@ -96,6 +93,8 @@ impl Form {
                 }
                 None
             }
+            FormMsg::Submit => Some(map(FormOutput::Submitted(self.contact.clone()))),
+            FormMsg::Cancel => Some(map(FormOutput::Cancelled)),
         }
     }
 }

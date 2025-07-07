@@ -17,15 +17,17 @@ pub enum InputOutput {
 
 pub struct Input {
     label: String,
+    label_width: u16,
     pub value: String,
     cursor: usize,
     focused: bool,
 }
 
 impl Input {
-    pub fn new(label: &str, value: &str) -> Self {
+    pub fn new(label: &str, value: &str, label_width: u16) -> Self {
         Self {
             label: label.to_string(),
+            label_width,
             value: value.to_string(),
             focused: false,
             cursor: value.len(),
@@ -90,10 +92,40 @@ impl Input {
     }
 
     pub fn view(&self, f: &mut Frame, area: Rect) {
-        f.render_widget(
-            Paragraph::new(self.label.clone()).alignment(Alignment::Left),
-            area,
+        // Split into fixed-width label and flexible input area.
+        let chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Length(self.label_width), Constraint::Min(10)])
+            .split(area);
+
+        let label_area = chunks[0];
+        let input_area = chunks[1];
+
+        let label_text = format!("{:>width$}:", self.label, width = self.label_width as usize);
+        f.render_widget(Paragraph::new(label_text), label_area);
+
+        // Input field with borders
+        let input_widget = Paragraph::new(self.value.clone()).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(if self.focused {
+                    Style::default().fg(Color::Cyan)
+                } else {
+                    Style::default()
+                }),
         );
+
+        f.render_widget(input_widget, input_area);
+
+        // Set cursor if focused
+        if self.focused {
+            let cursor_x = input_area.x + self.cursor.min(self.value.len()) as u16 + 1;
+            let cursor_y = input_area.y + 1;
+            f.set_cursor_position(Position {
+                x: cursor_x,
+                y: cursor_y,
+            });
+        }
     }
 
     pub fn handle_key(&self, event: KeyEvent) -> Option<InputMsg> {
