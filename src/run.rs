@@ -6,7 +6,7 @@ use crate::{
     model::Contact,
     ui::components::{
         Component,
-        app::{App, message::AppMsg},
+        //        app::{App, message::AppMsg},
     },
 };
 use crossterm::event::{self, Event};

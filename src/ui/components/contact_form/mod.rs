@@ -142,6 +142,7 @@ impl Component<ContactFormMsg, AppMsg> for ContactForm {
         }
     }
 }
+
 fn opt(value: &str) -> Option<String> {
     let value = value.trim();
     if value.is_empty() {

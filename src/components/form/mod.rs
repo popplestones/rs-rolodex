@@ -1,3 +1,6 @@
+use crossterm::event::{KeyCode, KeyEvent};
+use ratatui::{Frame, layout::Rect};
+
 use crate::{
     components::{
         component::opt,
@@ -38,23 +41,35 @@ pub struct Form {
     fields: Vec<Input>,
     contact: Contact,
     focused: usize,
+    editing_id: Option<i64>,
 }
 
 impl Form {
-    pub fn new(contact: Contact) -> Self {
-        let mut fields = vec![
-            Input::new("Name", &contact.name),
-            Input::new("Company", &contact.company.clone().unwrap_or_default()),
-            Input::new("Email", &contact.email.clone().unwrap_or_default()),
-            Input::new("Phone", &contact.phone.clone().unwrap_or_default()),
-        ];
-        fields[0].set_focused(true);
+    pub fn new() -> Self {
+        let contact = Contact::default();
+        let contact_clone = contact.clone();
+
         Self {
-            fields,
-            contact,
+            fields: vec![
+                Input::new("Name", &contact.name, 10),
+                Input::new("Company", &contact.company.unwrap_or_default(), 10),
+                Input::new("Email", &contact.email.unwrap_or_default(), 10),
+                Input::new("Phone", &contact.phone.unwrap_or_default(), 10),
+            ],
+            contact: contact_clone,
             focused: 0,
+            editing_id: None,
         }
     }
+    pub fn set_contact(&mut self, contact: Contact) {
+        self.editing_id = Some(contact.id);
+        self.fields[0].value = contact.name;
+        self.fields[1].value = contact.company.unwrap_or_default();
+        self.fields[2].value = contact.email.unwrap_or_default();
+        self.fields[3].value = contact.phone.unwrap_or_default();
+        self.focused = 0;
+    }
+
     pub fn update<ParentMsg>(
         &mut self,
         msg: FormMsg,
@@ -96,5 +111,42 @@ impl Form {
             FormMsg::Submit => Some(map(FormOutput::Submitted(self.contact.clone()))),
             FormMsg::Cancel => Some(map(FormOutput::Cancelled)),
         }
+    }
+
+    pub fn view(&self, f: &mut Frame, area: Rect) {}
+    pub fn handle_key(&self, event: KeyEvent) -> Option<FormMsg> {
+        match event.code {
+            KeyCode::Tab => Some(FormMsg::Next),
+            KeyCode::BackTab => Some(FormMsg::Previous),
+            KeyCode::Enter => Some(FormMsg::Submit),
+            KeyCode::Esc => Some(FormMsg::Cancel),
+            _ => {
+                if let Some(msg) = self.fields[self.focused].handle_key(event) {
+                    Some(FormMsg::Input(msg))
+                } else {
+                    None
+                }
+            }
+        }
+    }
+}
+
+impl crate::components::Component for Form {
+    type Msg = FormMsg;
+    type Output = FormOutput;
+
+    fn view(&self, f: &mut ratatui::Frame, area: Rect) {
+        self.view(f, area);
+    }
+    fn handle_key(&self, event: KeyEvent) -> Option<Self::Msg> {
+        self.handle_key(event)
+    }
+
+    fn update<ParentMsg>(
+        &mut self,
+        msg: Self::Msg,
+        map: impl Fn(Self::Output) -> ParentMsg,
+    ) -> Option<ParentMsg> {
+        self.update(msg, map)
     }
 }
