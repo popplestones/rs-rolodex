@@ -1,11 +1,12 @@
 use crossterm::event::{KeyCode, KeyEvent};
-use ratatui::{prelude::*, widgets::*};
+use fuzzy_matcher::{FuzzyMatcher, skim::SkimMatcherV2};
+use ratatui::prelude::*;
 
 use crate::{
     components::{
         Component,
         contact_list::{ContactList, ContactListMsg, ContactListOutput},
-        input::{Input, InputMode, InputMsg},
+        input::{Input, InputMode, InputMsg, InputOutput},
     },
     model::Contact,
 };
@@ -22,13 +23,15 @@ pub enum BrowseOutput {
 pub struct Browse {
     pub search: Input,
     pub contact_list: ContactList,
+    pub all_contacts: Vec<Contact>,
 }
 
 impl Browse {
     pub fn new(contacts: &[Contact]) -> Self {
         Self {
-            search: Input::new("Search", "foo", 10, InputMode::Regular),
+            search: Input::new("Search", "", 10, InputMode::Regular),
             contact_list: ContactList::new(contacts),
+            all_contacts: contacts.to_vec(),
         }
     }
     pub fn handle_key(&self, event: KeyEvent) -> Option<BrowseMsg> {
@@ -38,7 +41,8 @@ impl Browse {
             | KeyCode::PageUp
             | KeyCode::PageDown
             | KeyCode::Up
-            | KeyCode::Down => self.contact_list.handle_key(event).map(BrowseMsg::List),
+            | KeyCode::Down
+            | KeyCode::Enter => self.contact_list.handle_key(event).map(BrowseMsg::List),
             _ => self.search.handle_key(event).map(BrowseMsg::Input),
         }
     }
@@ -65,11 +69,41 @@ impl Browse {
                         }
                     })
             }
-            BrowseMsg::Input(msg) => {
-                self.search.update(msg, |_| {});
+            BrowseMsg::Input(input_msg) => {
+                let result = self.search.update(input_msg, |output| output);
+                if let Some(InputOutput::Changed(value)) = result {
+                    self.filter_contacts(&value);
+                }
                 None
             }
         }
+    }
+    fn filter_contacts(&mut self, query: &str) {
+        let matcher = SkimMatcherV2::default();
+
+        if query.trim().is_empty() {
+            self.contact_list.filtered_contacts = self.all_contacts.clone();
+        }
+
+        let mut matches: Vec<(i64, &Contact)> = self
+            .all_contacts
+            .iter()
+            .filter_map(|c| {
+                let haystack = format!(
+                    "{} {} {} {}",
+                    c.name,
+                    c.company.as_deref().unwrap_or(""),
+                    c.email.as_deref().unwrap_or(""),
+                    c.phone.as_deref().unwrap_or("")
+                );
+                matcher
+                    .fuzzy_match(&haystack, query)
+                    .map(|score| (score, c))
+            })
+            .collect();
+        matches.sort_by(|a, b| b.0.cmp(&a.0)); // descending score
+
+        self.contact_list.filtered_contacts = matches.into_iter().map(|(_, c)| c.clone()).collect();
     }
 }
 

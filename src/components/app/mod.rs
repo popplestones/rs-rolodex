@@ -12,7 +12,7 @@ use crate::{
     Db,
     components::{
         Component,
-        browse::{Browse, BrowseMsg},
+        browse::{Browse, BrowseMsg, BrowseOutput},
         delete_confirmation::{DeleteConfirmation, DeleteMsg},
         error_dialog::{ErrorDialog, ErrorMsg},
         form::{Form, FormMsg},
@@ -155,7 +155,7 @@ impl App {
     pub fn update<ParentMsg>(
         &mut self,
         msg: AppMsg,
-        map: impl Fn(AppOutput) -> ParentMsg,
+        _: impl Fn(AppOutput) -> ParentMsg,
     ) -> Option<ParentMsg> {
         match msg {
             AppMsg::Quit => {
@@ -164,7 +164,11 @@ impl App {
                 None
             }
             AppMsg::Browse(browse_msg) => {
-                self.browse.update(browse_msg, |_| {});
+                let result = self.browse.update(browse_msg, |output| output);
+                if let Some(BrowseOutput::ContactActivated(contact)) = result {
+                    self.selected_contact = Some(contact);
+                    self.should_quit = true;
+                }
                 None
             }
             AppMsg::Form(_) => todo!(),

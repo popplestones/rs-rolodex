@@ -4,6 +4,7 @@ use ratatui::{prelude::*, widgets::*};
 use crate::{components::Component, model::Contact};
 
 pub enum ContactListMsg {
+    Activate,
     Next,
     Prev,
     First,
@@ -38,24 +39,28 @@ impl ContactList {
     pub fn update<ParentMsg>(
         &mut self,
         msg: ContactListMsg,
-        _map: impl Fn(ContactListOutput) -> ParentMsg,
+        map: impl Fn(ContactListOutput) -> ParentMsg,
     ) -> Option<ParentMsg> {
         match msg {
             ContactListMsg::Next => {
                 if self.selected_index < self.filtered_contacts.len().saturating_sub(1) {
                     self.selected_index += 1;
                 }
+                None
             }
             ContactListMsg::Prev => {
                 if self.selected_index > 0 {
                     self.selected_index -= 1;
                 }
+                None
             }
             ContactListMsg::First => {
                 self.selected_index = 0;
+                None
             }
             ContactListMsg::Last => {
                 self.selected_index = self.filtered_contacts.len().saturating_sub(1);
+                None
             }
             ContactListMsg::PgUp => {
                 if self.selected_index < 10 {
@@ -63,6 +68,7 @@ impl ContactList {
                 } else {
                     self.selected_index -= 10;
                 }
+                None
             }
             ContactListMsg::PgDown => {
                 if self.selected_index > self.filtered_contacts.len().saturating_sub(10) {
@@ -70,11 +76,14 @@ impl ContactList {
                 } else {
                     self.selected_index += 10;
                 }
+                None
             }
-        };
-        None
+            ContactListMsg::Activate => self
+                .get_selected_contact()
+                .map(|contact| map(ContactListOutput::ContactActivated(contact))),
+        }
     }
-    fn draw(&self, f: &mut Frame, area: Rect, focused: bool) {
+    fn draw(&self, f: &mut Frame, area: Rect, _focused: bool) {
         let block = Block::default().borders(Borders::ALL).title("Contacts");
         f.render_widget(block, area);
 
@@ -138,6 +147,7 @@ impl ContactList {
             KeyCode::Up => Some(ContactListMsg::Prev),
             KeyCode::Home => Some(ContactListMsg::First),
             KeyCode::End => Some(ContactListMsg::Last),
+            KeyCode::Enter => Some(ContactListMsg::Activate),
             _ => None,
         }
     }

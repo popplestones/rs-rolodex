@@ -1,6 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
-use tracing::info;
 
 #[derive(Debug, Default)]
 pub enum InputMode {
@@ -120,23 +119,41 @@ impl Input {
         };
         let inner = block.inner(area);
 
-        let padded_value = format!("  {}", self.value.clone());
-        let input = Paragraph::new(padded_value).style(text_style);
+        let input = Paragraph::new(self.value.clone()).style(text_style);
         f.render_widget(input, inner);
 
+        self.set_cursor_position(f, inner, focused);
+    }
+    fn set_cursor_position(&self, f: &mut Frame, area: Rect, focused: bool) {
         if focused {
             let clamped_cursor = self.cursor.min(self.value.len());
-            let cursor_x = inner.x + clamped_cursor as u16;
-            let cursor_y = inner.y;
-            info!("Cursor position: {cursor_x}, {cursor_y}");
+            let cursor_x = area.x + clamped_cursor as u16;
+            let cursor_y = area.y;
 
             f.set_cursor_position(Position {
-                x: cursor_x + 2,
+                x: cursor_x,
                 y: cursor_y,
             });
         }
     }
-    fn draw_inline(&self, f: &mut Frame, area: Rect, focused: bool) {}
+    fn draw_inline(&self, f: &mut Frame, area: Rect, focused: bool) {
+        let text_style = if focused {
+            Style::default().fg(Color::Yellow)
+        } else {
+            Style::default()
+        };
+        let label = Paragraph::new(format!("{}:", self.label.clone()))
+            .style(Style::default().fg(Color::Cyan));
+        let input = Paragraph::new(self.value.clone()).style(text_style);
+        let layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Length(self.label_width), Constraint::Min(0)])
+            .split(area);
+        f.render_widget(label, layout[0]);
+        f.render_widget(input, layout[1]);
+
+        self.set_cursor_position(f, layout[1], focused);
+    }
     pub fn draw(&self, f: &mut Frame, area: Rect, focused: bool) {
         match self.mode {
             InputMode::Regular => self.draw_regular(f, area, focused),
