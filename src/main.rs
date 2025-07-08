@@ -1,8 +1,8 @@
 use clap::Parser;
 use rolodex::cli::Cli;
+use rolodex::components::app::App;
 use rolodex::config::Config;
 use rolodex::error::AppResult as Result;
-use rolodex::run::run_app;
 use rolodex::{Db, trace, tui};
 use tracing::{debug, info};
 
@@ -28,7 +28,7 @@ fn main() -> Result<()> {
 
     let mut terminal = tui::init_terminal()?;
     debug!("Running app");
-    let selected = run_app(&mut terminal, db)?;
+    let selected = App::run(&mut terminal, db)?;
     tui::restore_terminal()?;
 
     if let Some(contact) = selected {

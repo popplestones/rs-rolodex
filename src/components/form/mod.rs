@@ -37,6 +37,7 @@ const FIELD_ORDER: [FormField; 4] = [
     FormField::Phone,
 ];
 
+#[derive(Debug, Default)]
 pub struct Form {
     fields: Vec<Input>,
     contact: Contact,
@@ -113,20 +114,16 @@ impl Form {
         }
     }
 
-    pub fn view(&self, f: &mut Frame, area: Rect) {}
+    pub fn draw(&self, _f: &mut Frame, _area: Rect, _focused: bool) {}
     pub fn handle_key(&self, event: KeyEvent) -> Option<FormMsg> {
         match event.code {
             KeyCode::Tab => Some(FormMsg::Next),
             KeyCode::BackTab => Some(FormMsg::Previous),
             KeyCode::Enter => Some(FormMsg::Submit),
             KeyCode::Esc => Some(FormMsg::Cancel),
-            _ => {
-                if let Some(msg) = self.fields[self.focused].handle_key(event) {
-                    Some(FormMsg::Input(msg))
-                } else {
-                    None
-                }
-            }
+            _ => self.fields[self.focused]
+                .handle_key(event)
+                .map(FormMsg::Input),
         }
     }
 }
@@ -135,8 +132,8 @@ impl crate::components::Component for Form {
     type Msg = FormMsg;
     type Output = FormOutput;
 
-    fn view(&self, f: &mut ratatui::Frame, area: Rect) {
-        self.view(f, area);
+    fn draw(&self, f: &mut ratatui::Frame, area: Rect, focused: bool) {
+        self.draw(f, area, focused);
     }
     fn handle_key(&self, event: KeyEvent) -> Option<Self::Msg> {
         self.handle_key(event)

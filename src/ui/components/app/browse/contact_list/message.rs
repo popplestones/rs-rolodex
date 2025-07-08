@@ -1,8 +1,8 @@
-pub enum ContactListMessage {
-    Previous,
-    Next,
-    First,
-    Last,
-    PgUp,
-    PgDown,
-}
+// pub enum ContactListMessage {
+//     Previous,
+//     Next,
+//     First,
+//     Last,
+//     PgUp,
+//     PgDown,
+// }

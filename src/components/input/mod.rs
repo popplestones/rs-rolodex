@@ -15,6 +15,7 @@ pub enum InputOutput {
     Changed(String),
 }
 
+#[derive(Debug, Default)]
 pub struct Input {
     label: String,
     label_width: u16,
@@ -91,7 +92,7 @@ impl Input {
         }
     }
 
-    pub fn view(&self, f: &mut Frame, area: Rect) {
+    pub fn draw(&self, f: &mut Frame, area: Rect, _focused: bool) {
         // Split into fixed-width label and flexible input area.
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
@@ -146,8 +147,8 @@ impl crate::components::Component for Input {
     type Msg = InputMsg;
     type Output = InputOutput;
 
-    fn view(&self, f: &mut Frame, area: Rect) {
-        self.view(f, area);
+    fn draw(&self, f: &mut Frame, area: Rect, focused: bool) {
+        self.draw(f, area, focused);
     }
     fn handle_key(&self, event: KeyEvent) -> Option<Self::Msg> {
         self.handle_key(event)
