@@ -53,15 +53,21 @@ impl App {
         let browse = Browse::new(&all_contacts);
         let mut error_dialog = ErrorDialog::new();
         error_dialog.set_error("Error loading contacts");
+
+        let selected_contact = browse.contact_list.get_selected_contact();
+        let mut delete_confirmation = DeleteConfirmation::new();
+        if let Some(contact) = selected_contact {
+            delete_confirmation.set_contact(contact);
+        }
         Ok(Self {
             db,
             selected_contact: browse.contact_list.get_selected_contact(),
-            mode: AppMode::Error,
+            mode: AppMode::Delete,
             should_quit: false,
             browse,
             contact_form: Form::new(),
             error_dialog,
-            delete_confirmation: DeleteConfirmation::new(),
+            delete_confirmation,
         })
     }
     pub fn run<B: Backend>(terminal: &mut Terminal<B>, db: Db) -> Result<Option<Contact>> {
@@ -109,7 +115,7 @@ impl App {
                 self.contact_form.draw(f, overlay, true);
             }
             AppMode::Delete => {
-                let overlay = fixed_centered_rect(60, 20, area);
+                let overlay = fixed_centered_rect(60, 10, area);
                 self.delete_confirmation.draw(f, overlay, true);
             }
             AppMode::Error => {
