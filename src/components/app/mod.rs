@@ -155,11 +155,18 @@ impl App {
     pub fn update<ParentMsg>(
         &mut self,
         msg: AppMsg,
-        _: impl Fn(AppOutput) -> ParentMsg,
+        map: impl Fn(AppOutput) -> ParentMsg,
     ) -> Option<ParentMsg> {
         match msg {
-            AppMsg::Quit => todo!(),
-            AppMsg::Browse(_) => todo!(),
+            AppMsg::Quit => {
+                self.should_quit = true;
+                self.selected_contact = None;
+                None
+            }
+            AppMsg::Browse(browse_msg) => {
+                self.browse.update(browse_msg, |_| {});
+                None
+            }
             AppMsg::Form(_) => todo!(),
             AppMsg::Delete(_) => todo!(),
             AppMsg::Error(_) => todo!(),

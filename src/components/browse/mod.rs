@@ -1,17 +1,23 @@
-use crossterm::event::KeyEvent;
+use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
 
 use crate::{
     components::{
         Component,
-        contact_list::ContactList,
-        input::{Input, InputMode},
+        contact_list::{ContactList, ContactListMsg, ContactListOutput},
+        input::{Input, InputMode, InputMsg},
     },
     model::Contact,
 };
 
-pub enum BrowseMsg {}
-pub enum BrowseOutput {}
+pub enum BrowseMsg {
+    List(ContactListMsg),
+    Input(InputMsg),
+}
+
+pub enum BrowseOutput {
+    ContactActivated(Contact),
+}
 
 pub struct Browse {
     pub search: Input,
@@ -25,8 +31,16 @@ impl Browse {
             contact_list: ContactList::new(contacts),
         }
     }
-    pub fn handle_key(&self, _event: KeyEvent) -> Option<BrowseMsg> {
-        None
+    pub fn handle_key(&self, event: KeyEvent) -> Option<BrowseMsg> {
+        match event.code {
+            KeyCode::Home
+            | KeyCode::End
+            | KeyCode::PageUp
+            | KeyCode::PageDown
+            | KeyCode::Up
+            | KeyCode::Down => self.contact_list.handle_key(event).map(BrowseMsg::List),
+            _ => self.search.handle_key(event).map(BrowseMsg::Input),
+        }
     }
     pub fn draw(&self, f: &mut Frame, area: Rect, _focused: bool) {
         let chunks = Layout::default()
@@ -39,10 +53,23 @@ impl Browse {
     }
     pub fn update<ParentMsg>(
         &mut self,
-        _: BrowseMsg,
-        _: impl Fn(BrowseOutput) -> ParentMsg,
+        msg: BrowseMsg,
+        map: impl Fn(BrowseOutput) -> ParentMsg,
     ) -> Option<ParentMsg> {
-        None
+        match msg {
+            BrowseMsg::List(list_msg) => {
+                self.contact_list
+                    .update(list_msg, |list_output| match list_output {
+                        ContactListOutput::ContactActivated(contact) => {
+                            map(BrowseOutput::ContactActivated(contact))
+                        }
+                    })
+            }
+            BrowseMsg::Input(msg) => {
+                self.search.update(msg, |_| {});
+                None
+            }
+        }
     }
 }
 

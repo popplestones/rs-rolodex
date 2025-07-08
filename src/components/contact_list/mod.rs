@@ -1,10 +1,20 @@
-use crossterm::event::KeyEvent;
+use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
 
 use crate::{components::Component, model::Contact};
 
-pub enum ContactListMsg {}
-pub enum ContactListOutput {}
+pub enum ContactListMsg {
+    Next,
+    Prev,
+    First,
+    Last,
+    PgUp,
+    PgDown,
+}
+
+pub enum ContactListOutput {
+    ContactActivated(Contact),
+}
 
 pub struct ContactList {
     pub filtered_contacts: Vec<Contact>,
@@ -27,14 +37,109 @@ impl ContactList {
     }
     pub fn update<ParentMsg>(
         &mut self,
-        _msg: ContactListMsg,
+        msg: ContactListMsg,
         _map: impl Fn(ContactListOutput) -> ParentMsg,
     ) -> Option<ParentMsg> {
+        match msg {
+            ContactListMsg::Next => {
+                if self.selected_index < self.filtered_contacts.len().saturating_sub(1) {
+                    self.selected_index += 1;
+                }
+            }
+            ContactListMsg::Prev => {
+                if self.selected_index > 0 {
+                    self.selected_index -= 1;
+                }
+            }
+            ContactListMsg::First => {
+                self.selected_index = 0;
+            }
+            ContactListMsg::Last => {
+                self.selected_index = self.filtered_contacts.len().saturating_sub(1);
+            }
+            ContactListMsg::PgUp => {
+                if self.selected_index < 10 {
+                    self.selected_index = 0;
+                } else {
+                    self.selected_index -= 10;
+                }
+            }
+            ContactListMsg::PgDown => {
+                if self.selected_index > self.filtered_contacts.len().saturating_sub(10) {
+                    self.selected_index = self.filtered_contacts.len().saturating_sub(1);
+                } else {
+                    self.selected_index += 10;
+                }
+            }
+        };
         None
     }
-    fn draw(&self, _f: &mut Frame, _area: Rect, _focused: bool) {}
-    fn handle_key(&self, _key: KeyEvent) -> Option<ContactListMsg> {
-        None
+    fn draw(&self, f: &mut Frame, area: Rect, focused: bool) {
+        let block = Block::default().borders(Borders::ALL).title("Contacts");
+        f.render_widget(block, area);
+
+        let inner = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(1), Constraint::Min(1)])
+            .margin(1)
+            .split(area);
+
+        // Render column headings
+        let header = Paragraph::new(format!(
+            "   {:<20} {:<20} {:<35} {:<15}",
+            "Name", "Company", "Email", "Phone"
+        ))
+        .style(Style::default().add_modifier(Modifier::UNDERLINED | Modifier::BOLD));
+
+        f.render_widget(header, inner[0]);
+
+        let items: Vec<ListItem> = self
+            .filtered_contacts
+            .iter()
+            .map(|c| {
+                ListItem::new(format!(
+                    "{:<20} {:<20} {:<35} {:<15}",
+                    c.name,
+                    c.company.as_deref().unwrap_or("-"),
+                    c.email.as_deref().unwrap_or("-"),
+                    c.phone.as_deref().unwrap_or("-")
+                ))
+            })
+            .collect();
+
+        let list = List::new(items)
+            .highlight_style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )
+            .highlight_symbol(">> ");
+
+        let mut state = ListState::default();
+        state.select(Some(self.selected_index));
+
+        f.render_stateful_widget(list, inner[1], &mut state);
+
+        // Draw the scrollbar on the right
+        let mut scroll_state = ScrollbarState::new(self.filtered_contacts.len())
+            .position(self.selected_index)
+            .content_length(self.filtered_contacts.len());
+
+        let scrollbar = Scrollbar::default()
+            .orientation(ScrollbarOrientation::VerticalRight)
+            .thumb_style(Style::default().bg(Color::Cyan));
+
+        f.render_stateful_widget(scrollbar, inner[1], &mut scroll_state);
+    }
+
+    fn handle_key(&self, key: KeyEvent) -> Option<ContactListMsg> {
+        match key.code {
+            KeyCode::Down => Some(ContactListMsg::Next),
+            KeyCode::Up => Some(ContactListMsg::Prev),
+            KeyCode::Home => Some(ContactListMsg::First),
+            KeyCode::End => Some(ContactListMsg::Last),
+            _ => None,
+        }
     }
 }
 
