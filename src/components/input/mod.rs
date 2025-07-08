@@ -1,5 +1,13 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
+use tracing::info;
+
+#[derive(Debug, Default)]
+pub enum InputMode {
+    #[default]
+    Regular,
+    Inline,
+}
 
 pub enum InputMsg {
     CursorLeft,
@@ -22,16 +30,18 @@ pub struct Input {
     pub value: String,
     cursor: usize,
     focused: bool,
+    mode: InputMode,
 }
 
 impl Input {
-    pub fn new(label: &str, value: &str, label_width: u16) -> Self {
+    pub fn new(label: &str, value: &str, label_width: u16, mode: InputMode) -> Self {
         Self {
             label: label.to_string(),
             label_width,
             value: value.to_string(),
             focused: false,
             cursor: value.len(),
+            mode,
         }
     }
     pub fn set_focused(&mut self, focused: bool) {
@@ -92,40 +102,45 @@ impl Input {
         }
     }
 
-    pub fn draw(&self, f: &mut Frame, area: Rect, _focused: bool) {
-        // Split into fixed-width label and flexible input area.
-        let chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Length(self.label_width), Constraint::Min(10)])
-            .split(area);
+    fn draw_regular(&self, f: &mut Frame, area: Rect, focused: bool) {
+        let block = Block::default()
+            .title(self.label.clone())
+            .borders(Borders::ALL)
+            .border_style(if focused {
+                Style::default().fg(Color::Cyan)
+            } else {
+                Style::default()
+            });
+        f.render_widget(&block, area);
 
-        let label_area = chunks[0];
-        let input_area = chunks[1];
+        let text_style = if focused {
+            Style::default().fg(Color::Yellow)
+        } else {
+            Style::default()
+        };
+        let inner = block.inner(area);
 
-        let label_text = format!("{:>width$}:", self.label, width = self.label_width as usize);
-        f.render_widget(Paragraph::new(label_text), label_area);
+        let padded_value = format!("  {}", self.value.clone());
+        let input = Paragraph::new(padded_value).style(text_style);
+        f.render_widget(input, inner);
 
-        // Input field with borders
-        let input_widget = Paragraph::new(self.value.clone()).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(if self.focused {
-                    Style::default().fg(Color::Cyan)
-                } else {
-                    Style::default()
-                }),
-        );
+        if focused {
+            let clamped_cursor = self.cursor.min(self.value.len());
+            let cursor_x = inner.x + clamped_cursor as u16;
+            let cursor_y = inner.y;
+            info!("Cursor position: {cursor_x}, {cursor_y}");
 
-        f.render_widget(input_widget, input_area);
-
-        // Set cursor if focused
-        if self.focused {
-            let cursor_x = input_area.x + self.cursor.min(self.value.len()) as u16 + 1;
-            let cursor_y = input_area.y + 1;
             f.set_cursor_position(Position {
-                x: cursor_x,
+                x: cursor_x + 2,
                 y: cursor_y,
             });
+        }
+    }
+    fn draw_inline(&self, f: &mut Frame, area: Rect, focused: bool) {}
+    pub fn draw(&self, f: &mut Frame, area: Rect, focused: bool) {
+        match self.mode {
+            InputMode::Regular => self.draw_regular(f, area, focused),
+            InputMode::Inline => self.draw_inline(f, area, focused),
         }
     }
 

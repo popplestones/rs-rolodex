@@ -1,6 +1,10 @@
 use std::time::{Duration, Instant};
 
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::{
+    ExecutableCommand,
+    cursor::SetCursorStyle,
+    event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
+};
 use ratatui::prelude::*;
 use tracing::{debug, info};
 
@@ -62,7 +66,7 @@ impl App {
         Ok(Self {
             db,
             selected_contact: browse.contact_list.get_selected_contact(),
-            mode: AppMode::Delete,
+            mode: AppMode::Browse,
             should_quit: false,
             browse,
             contact_form: Form::new(),
@@ -71,6 +75,9 @@ impl App {
         })
     }
     pub fn run<B: Backend>(terminal: &mut Terminal<B>, db: Db) -> Result<Option<Contact>> {
+        std::io::stderr()
+            .execute(SetCursorStyle::BlinkingBar)
+            .expect("Failed to set cursor style");
         let mut app = App::new(db)?;
         let tick_rate = Duration::from_millis(250);
         let mut last_tick = Instant::now();

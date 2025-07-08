@@ -4,7 +4,7 @@ use ratatui::{Frame, layout::Rect};
 use crate::{
     components::{
         component::opt,
-        input::{Input, InputMsg, InputOutput},
+        input::{Input, InputMode, InputMsg, InputOutput},
     },
     model::Contact,
 };
@@ -52,10 +52,25 @@ impl Form {
 
         Self {
             fields: vec![
-                Input::new("Name", &contact.name, 10),
-                Input::new("Company", &contact.company.unwrap_or_default(), 10),
-                Input::new("Email", &contact.email.unwrap_or_default(), 10),
-                Input::new("Phone", &contact.phone.unwrap_or_default(), 10),
+                Input::new("Name", &contact.name, 10, InputMode::Inline),
+                Input::new(
+                    "Company",
+                    &contact.company.unwrap_or_default(),
+                    10,
+                    InputMode::Inline,
+                ),
+                Input::new(
+                    "Email",
+                    &contact.email.unwrap_or_default(),
+                    10,
+                    InputMode::Inline,
+                ),
+                Input::new(
+                    "Phone",
+                    &contact.phone.unwrap_or_default(),
+                    10,
+                    InputMode::Inline,
+                ),
             ],
             contact: contact_clone,
             focused: 0,
