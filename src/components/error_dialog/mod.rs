@@ -1,10 +1,14 @@
-use crossterm::event::KeyEvent;
+use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
 
 use crate::components::Component;
 
-pub enum ErrorMsg {}
-pub enum ErrorOutput {}
+pub enum ErrorMsg {
+    Dismiss,
+}
+pub enum ErrorOutput {
+    Dismissed,
+}
 #[derive(Debug, Default)]
 pub struct ErrorDialog {
     message: String,
@@ -16,8 +20,11 @@ impl ErrorDialog {
     pub fn set_error(&mut self, message: &str) {
         self.message = message.to_string();
     }
-    pub fn handle_key(&self, _event: KeyEvent) -> Option<ErrorMsg> {
-        None
+    pub fn handle_key(&self, event: KeyEvent) -> Option<ErrorMsg> {
+        match event.code {
+            KeyCode::Esc => Some(ErrorMsg::Dismiss),
+            _ => None,
+        }
     }
     pub fn draw(&self, f: &mut Frame, area: Rect, _focused: bool) {
         f.render_widget(Clear, area);
@@ -37,10 +44,12 @@ impl ErrorDialog {
     }
     pub fn update<ParentMsg>(
         &mut self,
-        _msg: ErrorMsg,
-        _map: impl Fn(ErrorOutput) -> ParentMsg,
+        msg: ErrorMsg,
+        map: impl Fn(ErrorOutput) -> ParentMsg,
     ) -> Option<ParentMsg> {
-        None
+        match msg {
+            ErrorMsg::Dismiss => Some(map(ErrorOutput::Dismissed)),
+        }
     }
 }
 

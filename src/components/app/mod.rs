@@ -14,8 +14,8 @@ use crate::{
         Component,
         browse::{Browse, BrowseMsg, BrowseOutput},
         delete_confirmation::{DeleteConfirmation, DeleteMsg},
-        error_dialog::{ErrorDialog, ErrorMsg},
-        form::{Form, FormMsg},
+        error_dialog::{ErrorDialog, ErrorMsg, ErrorOutput},
+        form::{Form, FormMsg, FormOutput},
     },
     error::AppResult as Result,
     layout::fixed_centered_rect,
@@ -23,10 +23,17 @@ use crate::{
 };
 
 pub enum AppMsg {
+    // UI events from components
     Browse(BrowseMsg),
     Form(FormMsg),
-    Delete(DeleteMsg),
-    Error(ErrorMsg),
+    DeleteDialog(DeleteMsg),
+    ErrorDialog(ErrorMsg),
+
+    //High-level app messages
+    AddContact,
+    EditContact(Contact),
+    ConfirmDelete(Contact),
+    ShowError(String),
     Quit,
 }
 pub type AppOutput = AppMsg;
@@ -89,15 +96,15 @@ impl App {
                 .checked_sub(last_tick.elapsed())
                 .unwrap_or(Duration::from_secs(0));
 
-            if event::poll(timeout)? {
-                if let Event::Key(key_event) = event::read()? {
-                    if let Some(mut msg) = app.handle_key(key_event) {
-                        while let Some(next) = app.update(msg, |msg| msg) {
-                            msg = next;
-                        }
-                    }
+            if event::poll(timeout)?
+                && let Event::Key(key_event) = event::read()?
+                && let Some(mut msg) = app.handle_key(key_event)
+            {
+                while let Some(next) = app.update(msg, |msg| msg) {
+                    msg = next;
                 }
             }
+
             last_tick = Instant::now();
 
             if app.should_quit {
@@ -106,6 +113,10 @@ impl App {
             }
         }
         Ok(app.selected_contact)
+    }
+    fn dismiss_error(&mut self) {
+        self.mode = AppMode::Browse;
+        self.error_dialog.set_error("");
     }
     pub fn draw(&self, f: &mut Frame, area: Rect, focused: bool) {
         // This is where we split our frame into multiple areas and delegate to our components to
@@ -118,7 +129,7 @@ impl App {
         match self.mode {
             AppMode::Browse => {}
             AppMode::Form => {
-                let overlay = fixed_centered_rect(60, 20, area);
+                let overlay = fixed_centered_rect(40, 10, area);
                 self.contact_form.draw(f, overlay, true);
             }
             AppMode::Delete => {
@@ -138,6 +149,18 @@ impl App {
                 info!("Ctrl+Q pressed - Quitting");
                 return Some(AppMsg::Quit);
             }
+            KeyCode::Char('a') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+                info!("Ctrl+A pressed - Opening Add Contact Modal");
+                return Some(AppMsg::AddContact);
+            }
+            KeyCode::Char('e') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+                info!("Ctrl+E pressed - Opening Edit Contact Modal");
+                return self.selected_contact.clone().map(AppMsg::EditContact);
+            }
+            KeyCode::Char('d') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+                info!("Ctrl+D pressed - Opening Delete Modal");
+                return self.selected_contact.clone().map(AppMsg::ConfirmDelete);
+            }
             _ => {}
         }
 
@@ -148,14 +171,14 @@ impl App {
             AppMode::Delete => self
                 .delete_confirmation
                 .handle_key(event)
-                .map(AppMsg::Delete),
-            AppMode::Error => self.error_dialog.handle_key(event).map(AppMsg::Error),
+                .map(AppMsg::DeleteDialog),
+            AppMode::Error => self.error_dialog.handle_key(event).map(AppMsg::ErrorDialog),
         }
     }
     pub fn update<ParentMsg>(
         &mut self,
         msg: AppMsg,
-        _: impl Fn(AppOutput) -> ParentMsg,
+        map: impl Fn(AppOutput) -> ParentMsg,
     ) -> Option<ParentMsg> {
         match msg {
             AppMsg::Quit => {
@@ -171,9 +194,44 @@ impl App {
                 }
                 None
             }
-            AppMsg::Form(_) => todo!(),
-            AppMsg::Delete(_) => todo!(),
-            AppMsg::Error(_) => todo!(),
+            AppMsg::Form(form_msg) => {
+                let form_output = self.contact_form.update(form_msg, |output| output);
+                match form_output {
+                    Some(FormOutput::Submitted(contact)) => {
+                        let result = self.db.add_contact(contact);
+                        if let Err(err) = result {
+                            return Some(map(AppMsg::ShowError(err.to_string())));
+                        }
+                    }
+                    Some(FormOutput::Cancelled) => {
+                        self.selected_contact = None;
+                    }
+                    None => {}
+                }
+
+                None
+            }
+            AppMsg::DeleteDialog(_) => todo!(),
+            AppMsg::ErrorDialog(error_msg) => {
+                if let Some(output) = self.error_dialog.update(error_msg, |output| output) {
+                    match output {
+                        ErrorOutput::Dismissed => self.dismiss_error(),
+                    }
+                }
+                None
+            }
+            AppMsg::AddContact => {
+                self.mode = AppMode::Form;
+                self.contact_form.set_contact(Contact::default());
+                None
+            }
+            AppMsg::EditContact(_contact) => todo!(),
+            AppMsg::ConfirmDelete(_contact) => todo!(),
+            AppMsg::ShowError(error) => {
+                self.error_dialog.set_error(&error);
+                self.mode = AppMode::Error;
+                None
+            }
         }
     }
 }

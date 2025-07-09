@@ -1,5 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent};
-use ratatui::{Frame, layout::Rect};
+use ratatui::{prelude::*, widgets::*};
 
 use crate::{
     components::{
@@ -129,7 +129,48 @@ impl Form {
         }
     }
 
-    pub fn draw(&self, _f: &mut Frame, _area: Rect, _focused: bool) {}
+    pub fn draw(&self, f: &mut Frame, area: Rect, focused: bool) {
+        f.render_widget(Clear, area);
+
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title(" Add Contact ")
+            .border_type(BorderType::Rounded)
+            .padding(Padding {
+                left: 5,
+                right: 5,
+                top: 1,
+                bottom: 1,
+            });
+
+        f.render_widget(block.clone(), area);
+
+        let inner = block.inner(area);
+
+        let num_fields = self.fields.len();
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(
+                std::iter::repeat(Constraint::Length(1))
+                    .take(num_fields)
+                    .chain([Constraint::Length(1), Constraint::Length(1)])
+                    .collect::<Vec<_>>(),
+            )
+            .split(inner);
+
+        for (i, field) in self.fields.iter().enumerate() {
+            let is_focused = self.focused == i;
+            field.draw(f, chunks[i], is_focused);
+        }
+
+        let button_area = chunks[num_fields + 1];
+        let text = Span::styled(
+            "[Enter] = Save / [Esc] = Cancel",
+            Style::default().fg(Color::DarkGray),
+        );
+        let paragraph = Paragraph::new(Span::from(text)).alignment(Alignment::Center);
+        f.render_widget(paragraph, button_area);
+    }
     pub fn handle_key(&self, event: KeyEvent) -> Option<FormMsg> {
         match event.code {
             KeyCode::Tab => Some(FormMsg::Next),

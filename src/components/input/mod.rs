@@ -142,13 +142,19 @@ impl Input {
         } else {
             Style::default()
         };
-        let label = Paragraph::new(format!("{}:", self.label.clone()))
-            .style(Style::default().fg(Color::Cyan));
+        let label_text = format!(
+            "{:<width$}:",
+            self.label.clone(),
+            width = self.label_width as usize
+        );
+
+        let label = Paragraph::new(label_text).style(Style::default().fg(Color::Cyan));
         let input = Paragraph::new(self.value.clone()).style(text_style);
         let layout = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Length(self.label_width), Constraint::Min(0)])
+            .constraints([Constraint::Length(self.label_width + 1), Constraint::Min(0)])
             .split(area);
+
         f.render_widget(label, layout[0]);
         f.render_widget(input, layout[1]);
 
