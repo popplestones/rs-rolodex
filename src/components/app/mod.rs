@@ -13,7 +13,7 @@ use crate::{
     components::{
         Component,
         browse::{Browse, BrowseMsg, BrowseOutput},
-        delete_confirmation::{DeleteConfirmation, DeleteMsg},
+        delete_confirmation::{DeleteConfirmation, DeleteMsg, DeleteOutput},
         error_dialog::{ErrorDialog, ErrorMsg, ErrorOutput},
         form::{Form, FormMsg, FormOutput},
     },
@@ -118,6 +118,14 @@ impl App {
         self.mode = AppMode::Browse;
         self.error_dialog.set_error("");
     }
+    fn refresh_contacts(&mut self) -> Option<AppMsg> {
+        let result = self.db.load_customers();
+        if let Err(err) = result {
+            return Some(AppMsg::ShowError(err.to_string()));
+        }
+        self.browse.set_contacts(&result.unwrap());
+        None
+    }
     pub fn draw(&self, f: &mut Frame, area: Rect, focused: bool) {
         // This is where we split our frame into multiple areas and delegate to our components to
         // draw themselves.
@@ -129,11 +137,11 @@ impl App {
         match self.mode {
             AppMode::Browse => {}
             AppMode::Form => {
-                let overlay = fixed_centered_rect(40, 10, area);
+                let overlay = fixed_centered_rect(50, 10, area);
                 self.contact_form.draw(f, overlay, true);
             }
             AppMode::Delete => {
-                let overlay = fixed_centered_rect(60, 10, area);
+                let overlay = fixed_centered_rect(60, 12, area);
                 self.delete_confirmation.draw(f, overlay, true);
             }
             AppMode::Error => {
@@ -187,10 +195,16 @@ impl App {
                 None
             }
             AppMsg::Browse(browse_msg) => {
-                let result = self.browse.update(browse_msg, |output| output);
-                if let Some(BrowseOutput::ContactActivated(contact)) = result {
-                    self.selected_contact = Some(contact);
-                    self.should_quit = true;
+                match self.browse.update(browse_msg, |output| output) {
+                    Some(BrowseOutput::ContactSelected(contact)) => {
+                        info!("Contact selected: {:?}", contact);
+                        self.selected_contact = Some(contact);
+                    }
+                    Some(BrowseOutput::ContactActivated(contact)) => {
+                        self.selected_contact = Some(contact);
+                        self.should_quit = true;
+                    }
+                    _ => {}
                 }
                 None
             }
@@ -198,20 +212,47 @@ impl App {
                 let form_output = self.contact_form.update(form_msg, |output| output);
                 match form_output {
                     Some(FormOutput::Submitted(contact)) => {
-                        let result = self.db.add_contact(contact);
-                        if let Err(err) = result {
-                            return Some(map(AppMsg::ShowError(err.to_string())));
+                        info!("Contact submitted: {:?}", contact);
+                        if contact.id == 0 {
+                            let result = self.db.add_contact(contact);
+                            if let Err(err) = result {
+                                return Some(map(AppMsg::ShowError(err.to_string())));
+                            }
+                        } else {
+                            let result = self.db.update_contact(contact.id, contact);
+                            if let Err(err) = result {
+                                return Some(map(AppMsg::ShowError(err.to_string())));
+                            }
                         }
+                        self.refresh_contacts();
+                        self.mode = AppMode::Browse;
                     }
                     Some(FormOutput::Cancelled) => {
-                        self.selected_contact = None;
+                        self.mode = AppMode::Browse;
                     }
                     None => {}
                 }
 
                 None
             }
-            AppMsg::DeleteDialog(_) => todo!(),
+            AppMsg::DeleteDialog(delete_msg) => {
+                match self.delete_confirmation.update(delete_msg, |output| output) {
+                    Some(DeleteOutput::Confirmed(contact)) => {
+                        self.mode = AppMode::Browse;
+                        let result = self.db.delete_contact(contact.id);
+                        self.refresh_contacts();
+                        if let Err(err) = result {
+                            return Some(map(AppMsg::ShowError(err.to_string())));
+                        }
+                        None
+                    }
+                    Some(DeleteOutput::Cancelled) => {
+                        self.mode = AppMode::Browse;
+                        None
+                    }
+                    None => None,
+                }
+            }
             AppMsg::ErrorDialog(error_msg) => {
                 if let Some(output) = self.error_dialog.update(error_msg, |output| output) {
                     match output {
@@ -225,8 +266,18 @@ impl App {
                 self.contact_form.set_contact(Contact::default());
                 None
             }
-            AppMsg::EditContact(_contact) => todo!(),
-            AppMsg::ConfirmDelete(_contact) => todo!(),
+            AppMsg::EditContact(_contact) => {
+                self.mode = AppMode::Form;
+                if let Some(contact) = &self.selected_contact {
+                    self.contact_form.set_contact(contact.clone());
+                }
+                None
+            }
+            AppMsg::ConfirmDelete(contact) => {
+                self.delete_confirmation.set_contact(contact);
+                self.mode = AppMode::Delete;
+                None
+            }
             AppMsg::ShowError(error) => {
                 self.error_dialog.set_error(&error);
                 self.mode = AppMode::Error;

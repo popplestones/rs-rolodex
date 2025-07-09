@@ -1,10 +1,17 @@
-use crossterm::event::KeyEvent;
+use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
+use tracing::info;
 
 use crate::{components::Component, model::Contact};
 
-pub enum DeleteMsg {}
-pub enum DeleteOutput {}
+pub enum DeleteMsg {
+    Yes,
+    No,
+}
+pub enum DeleteOutput {
+    Confirmed(Contact),
+    Cancelled,
+}
 
 #[derive(Debug, Default)]
 pub struct DeleteConfirmation {
@@ -18,8 +25,12 @@ impl DeleteConfirmation {
     pub fn set_contact(&mut self, contact: Contact) {
         self.contact = contact;
     }
-    pub fn handle_key(&self, _event: KeyEvent) -> Option<DeleteMsg> {
-        None
+    pub fn handle_key(&self, event: KeyEvent) -> Option<DeleteMsg> {
+        match event.code {
+            KeyCode::Char('y') => Some(DeleteMsg::Yes),
+            KeyCode::Char('n') | KeyCode::Esc => Some(DeleteMsg::No),
+            _ => None,
+        }
     }
     pub fn draw(&self, f: &mut Frame, area: Rect, _focused: bool) {
         f.render_widget(Clear, area);
@@ -37,7 +48,7 @@ impl DeleteConfirmation {
             .direction(Direction::Vertical)
             .constraints([
                 Constraint::Length(3),
-                Constraint::Length(6),
+                Constraint::Length(8),
                 Constraint::Length(2),
             ])
             .split(inner_area);
@@ -83,10 +94,13 @@ impl DeleteConfirmation {
     }
     pub fn update<ParentMsg>(
         &mut self,
-        _: DeleteMsg,
-        _: impl Fn(DeleteOutput) -> ParentMsg,
+        msg: DeleteMsg,
+        map: impl Fn(DeleteOutput) -> ParentMsg,
     ) -> Option<ParentMsg> {
-        None
+        match msg {
+            DeleteMsg::Yes => Some(map(DeleteOutput::Confirmed(self.contact.clone()))),
+            DeleteMsg::No => Some(map(DeleteOutput::Cancelled)),
+        }
     }
 }
 

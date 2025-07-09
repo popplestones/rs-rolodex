@@ -14,6 +14,7 @@ pub enum ContactListMsg {
 }
 
 pub enum ContactListOutput {
+    ContactSelected(Contact),
     ContactActivated(Contact),
 }
 
@@ -45,22 +46,32 @@ impl ContactList {
             ContactListMsg::Next => {
                 if self.selected_index < self.filtered_contacts.len().saturating_sub(1) {
                     self.selected_index += 1;
+                    return Some(map(ContactListOutput::ContactSelected(
+                        self.get_selected_contact().unwrap(),
+                    )));
                 }
                 None
             }
             ContactListMsg::Prev => {
                 if self.selected_index > 0 {
                     self.selected_index -= 1;
+                    return Some(map(ContactListOutput::ContactSelected(
+                        self.get_selected_contact().unwrap(),
+                    )));
                 }
                 None
             }
             ContactListMsg::First => {
                 self.selected_index = 0;
-                None
+                Some(map(ContactListOutput::ContactSelected(
+                    self.get_selected_contact().unwrap(),
+                )))
             }
             ContactListMsg::Last => {
                 self.selected_index = self.filtered_contacts.len().saturating_sub(1);
-                None
+                Some(map(ContactListOutput::ContactSelected(
+                    self.get_selected_contact().unwrap(),
+                )))
             }
             ContactListMsg::PgUp => {
                 if self.selected_index < 10 {
@@ -68,7 +79,9 @@ impl ContactList {
                 } else {
                     self.selected_index -= 10;
                 }
-                None
+                Some(map(ContactListOutput::ContactSelected(
+                    self.get_selected_contact().unwrap(),
+                )))
             }
             ContactListMsg::PgDown => {
                 if self.selected_index > self.filtered_contacts.len().saturating_sub(10) {
@@ -76,7 +89,9 @@ impl ContactList {
                 } else {
                     self.selected_index += 10;
                 }
-                None
+                Some(map(ContactListOutput::ContactSelected(
+                    self.get_selected_contact().unwrap(),
+                )))
             }
             ContactListMsg::Activate => self
                 .get_selected_contact()

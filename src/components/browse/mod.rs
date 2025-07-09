@@ -1,6 +1,7 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use fuzzy_matcher::{FuzzyMatcher, skim::SkimMatcherV2};
 use ratatui::prelude::*;
+use tracing::info;
 
 use crate::{
     components::{
@@ -17,6 +18,7 @@ pub enum BrowseMsg {
 }
 
 pub enum BrowseOutput {
+    ContactSelected(Contact),
     ContactActivated(Contact),
 }
 
@@ -29,10 +31,15 @@ pub struct Browse {
 impl Browse {
     pub fn new(contacts: &[Contact]) -> Self {
         Self {
-            search: Input::new("Search", "", 10, InputMode::Regular),
+            search: Input::new("Search", "", 10, InputMode::Regular, 40),
             contact_list: ContactList::new(contacts),
             all_contacts: contacts.to_vec(),
         }
+    }
+    pub fn set_contacts(&mut self, contacts: &[Contact]) {
+        let query = self.search.value.clone();
+        self.all_contacts = contacts.to_vec();
+        self.filter_contacts(&query);
     }
     pub fn handle_key(&self, event: KeyEvent) -> Option<BrowseMsg> {
         match event.code {
@@ -66,6 +73,9 @@ impl Browse {
                     .update(list_msg, |list_output| match list_output {
                         ContactListOutput::ContactActivated(contact) => {
                             map(BrowseOutput::ContactActivated(contact))
+                        }
+                        ContactListOutput::ContactSelected(contact) => {
+                            map(BrowseOutput::ContactSelected(contact))
                         }
                     })
             }

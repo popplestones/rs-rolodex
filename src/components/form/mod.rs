@@ -1,5 +1,8 @@
+use std::iter::repeat_n;
+
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
+use tracing::info;
 
 use crate::{
     components::{
@@ -9,6 +12,7 @@ use crate::{
     model::Contact,
 };
 
+#[derive(Debug, Clone)]
 pub enum FormMsg {
     Input(InputMsg),
     Next,
@@ -22,7 +26,7 @@ pub enum FormOutput {
     Cancelled,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum FormField {
     Name,
     Company,
@@ -52,24 +56,27 @@ impl Form {
 
         Self {
             fields: vec![
-                Input::new("Name", &contact.name, 10, InputMode::Inline),
+                Input::new("Name", &contact.name, 10, InputMode::Inline, 30),
                 Input::new(
                     "Company",
                     &contact.company.unwrap_or_default(),
                     10,
                     InputMode::Inline,
+                    30,
                 ),
                 Input::new(
                     "Email",
                     &contact.email.unwrap_or_default(),
                     10,
                     InputMode::Inline,
+                    30,
                 ),
                 Input::new(
                     "Phone",
                     &contact.phone.unwrap_or_default(),
                     10,
                     InputMode::Inline,
+                    20,
                 ),
             ],
             contact: contact_clone,
@@ -79,11 +86,13 @@ impl Form {
     }
     pub fn set_contact(&mut self, contact: Contact) {
         self.editing_id = Some(contact.id);
+        self.contact = contact.clone();
         self.fields[0].value = contact.name;
         self.fields[1].value = contact.company.unwrap_or_default();
         self.fields[2].value = contact.email.unwrap_or_default();
         self.fields[3].value = contact.phone.unwrap_or_default();
         self.focused = 0;
+        self.fields[0].set_focused(true);
     }
 
     pub fn update<ParentMsg>(
@@ -91,12 +100,17 @@ impl Form {
         msg: FormMsg,
         map: impl Fn(FormOutput) -> ParentMsg,
     ) -> Option<ParentMsg> {
+        info!("Form update: {:?}", msg);
+        info!("Contact: {:?}", self.contact);
         match msg {
             FormMsg::Input(input_msg) => {
+                info!("Form input: {:?}", input_msg);
                 if let Some(field) = self.fields.get_mut(self.focused) {
                     let field_key = &FIELD_ORDER[self.focused];
+                    info!("Field key: {:?}", field_key);
 
                     if let Some(InputOutput::Changed(val)) = field.update(input_msg, |out| out) {
+                        info!("Field value: {:?}", val);
                         match field_key {
                             FormField::Name => self.contact.name = val,
                             FormField::Company => self.contact.company = opt(val),
@@ -129,7 +143,7 @@ impl Form {
         }
     }
 
-    pub fn draw(&self, f: &mut Frame, area: Rect, focused: bool) {
+    pub fn draw(&self, f: &mut Frame, area: Rect, _focused: bool) {
         f.render_widget(Clear, area);
 
         let block = Block::default()
@@ -137,8 +151,8 @@ impl Form {
             .title(" Add Contact ")
             .border_type(BorderType::Rounded)
             .padding(Padding {
-                left: 5,
-                right: 5,
+                left: 2,
+                right: 2,
                 top: 1,
                 bottom: 1,
             });
@@ -151,8 +165,7 @@ impl Form {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints(
-                std::iter::repeat(Constraint::Length(1))
-                    .take(num_fields)
+                repeat_n(Constraint::Length(1), num_fields)
                     .chain([Constraint::Length(1), Constraint::Length(1)])
                     .collect::<Vec<_>>(),
             )
@@ -168,7 +181,7 @@ impl Form {
             "[Enter] = Save / [Esc] = Cancel",
             Style::default().fg(Color::DarkGray),
         );
-        let paragraph = Paragraph::new(Span::from(text)).alignment(Alignment::Center);
+        let paragraph = Paragraph::new(text).alignment(Alignment::Center);
         f.render_widget(paragraph, button_area);
     }
     pub fn handle_key(&self, event: KeyEvent) -> Option<FormMsg> {
