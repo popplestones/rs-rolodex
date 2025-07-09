@@ -16,5 +16,9 @@ pub trait Component {
     fn handle_key(&self, key: KeyEvent) -> Option<Self::Msg>;
 
     /// Draw the component to the given area.
-    fn view(&self, f: &mut Frame, area: Rect);
+    fn draw(&self, f: &mut Frame, area: Rect, focused: bool);
+}
+
+pub fn opt(val: String) -> Option<String> {
+    if val.is_empty() { None } else { Some(val) }
 }
