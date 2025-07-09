@@ -1,6 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
-use tracing::info;
 
 use crate::{components::Component, model::Contact};
 

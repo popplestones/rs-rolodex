@@ -1,7 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use fuzzy_matcher::{FuzzyMatcher, skim::SkimMatcherV2};
 use ratatui::prelude::*;
-use tracing::info;
 
 use crate::{
     components::{

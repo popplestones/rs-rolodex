@@ -195,7 +195,7 @@ impl Input {
         match event.code {
             KeyCode::Char('l') if event.modifiers.contains(KeyModifiers::CONTROL) => {
                 info!("Ctrl+L pressed - Clearing input");
-                return Some(InputMsg::Clear);
+                Some(InputMsg::Clear)
             }
             KeyCode::Left => Some(InputMsg::CursorLeft),
             KeyCode::Right => Some(InputMsg::CursorRight),
