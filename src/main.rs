@@ -26,6 +26,20 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
+    if let Some(backup_path) = args.backup {
+        debug!("Backing up contacts to {}", backup_path.display());
+        db.backup_to_file(&backup_path)?;
+        println!("Contacts backed up to {}", backup_path.display());
+        return Ok(());
+    }
+
+    if let Some(restore_path) = args.restore {
+        debug!("Restoring contacts from {}", restore_path.display());
+        let count = db.restore_from_file(&restore_path)?;
+        println!("Restored {} contacts from {}", count, restore_path.display());
+        return Ok(());
+    }
+
     let mut terminal = tui::init_terminal()?;
     debug!("Running app");
     let selected = App::run(&mut terminal, db)?;
