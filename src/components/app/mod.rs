@@ -5,7 +5,10 @@ use crossterm::{
     cursor::SetCursorStyle,
     event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
 };
-use ratatui::prelude::*;
+use ratatui::{
+    prelude::*,
+    layout::{Constraint, Direction, Layout},
+};
 use tracing::{debug, info};
 
 use crate::{
@@ -16,10 +19,12 @@ use crate::{
         delete_confirmation::{DeleteConfirmation, DeleteMsg, DeleteOutput},
         error_dialog::{ErrorDialog, ErrorMsg, ErrorOutput},
         form::{Form, FormMsg, FormOutput},
+        status_bar::{StatusBar, StatusBarMsg},
     },
     error::AppResult as Result,
     layout::fixed_centered_rect,
     model::Contact,
+    mode::AppMode,
 };
 
 pub enum AppMsg {
@@ -28,6 +33,7 @@ pub enum AppMsg {
     Form(FormMsg),
     DeleteDialog(DeleteMsg),
     ErrorDialog(ErrorMsg),
+    StatusBar(StatusBarMsg),
 
     //High-level app messages
     AddContact,
@@ -38,14 +44,7 @@ pub enum AppMsg {
 }
 pub type AppOutput = AppMsg;
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub enum AppMode {
-    #[default]
-    Browse,
-    Form,
-    Delete,
-    Error,
-}
+
 
 pub struct App {
     pub db: Db,
@@ -56,6 +55,7 @@ pub struct App {
     pub contact_form: Form,
     pub error_dialog: ErrorDialog,
     pub delete_confirmation: DeleteConfirmation,
+    pub status_bar: StatusBar,
 }
 
 impl App {
@@ -70,6 +70,13 @@ impl App {
         if let Some(contact) = selected_contact {
             delete_confirmation.set_contact(contact);
         }
+        let mut status_bar = StatusBar::new();
+        status_bar.update(StatusBarMsg::UpdateCounts {
+            total: all_contacts.len(),
+            filtered: all_contacts.len(),
+        });
+        status_bar.update(StatusBarMsg::UpdateMode(AppMode::Browse));
+
         Ok(Self {
             db,
             selected_contact: browse.contact_list.get_selected_contact(),
@@ -79,6 +86,7 @@ impl App {
             contact_form: Form::new(),
             error_dialog,
             delete_confirmation,
+            status_bar,
         })
     }
     pub fn run<B: Backend>(terminal: &mut Terminal<B>, db: Db) -> Result<Option<Contact>> {
@@ -117,6 +125,7 @@ impl App {
     fn dismiss_error(&mut self) {
         self.mode = AppMode::Browse;
         self.error_dialog.set_error("");
+        self.update_status_bar_mode();
     }
     fn refresh_contacts(&mut self) -> Option<AppMsg> {
         let result = self.db.load_customers();
@@ -124,28 +133,51 @@ impl App {
             return Some(AppMsg::ShowError(err.to_string()));
         }
         self.browse.set_contacts(&result.unwrap());
+        self.update_status_bar_counts();
         None
+    }
+
+    fn update_status_bar_counts(&mut self) {
+        let total = self.browse.all_contacts.len();
+        let filtered = self.browse.contact_list.filtered_contacts.len();
+        self.status_bar.update(StatusBarMsg::UpdateCounts { total, filtered });
+    }
+
+    fn update_status_bar_mode(&mut self) {
+        self.status_bar.update(StatusBarMsg::UpdateMode(self.mode.clone()));
     }
     pub fn draw(&self, f: &mut Frame, area: Rect, focused: bool) {
         // This is where we split our frame into multiple areas and delegate to our components to
         // draw themselves.
 
+        // Split the area into main content and status bar
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Min(1), Constraint::Length(1)])
+            .split(area);
+
+        let main_area = chunks[0];
+        let status_area = chunks[1];
+
         // Draw the main UI
-        self.browse.draw(f, area, focused);
+        self.browse.draw(f, main_area, focused);
+
+        // Draw the status bar
+        self.status_bar.draw(f, status_area, false);
 
         // Draw any mode related UI overlaying the main UI
         match self.mode {
             AppMode::Browse => {}
-            AppMode::Form => {
-                let overlay = fixed_centered_rect(50, 10, area);
+            AppMode::ContactForm => {
+                let overlay = fixed_centered_rect(50, 10, main_area);
                 self.contact_form.draw(f, overlay, true);
             }
             AppMode::Delete => {
-                let overlay = fixed_centered_rect(60, 12, area);
+                let overlay = fixed_centered_rect(60, 12, main_area);
                 self.delete_confirmation.draw(f, overlay, true);
             }
-            AppMode::Error => {
-                let overlay = fixed_centered_rect(40, 8, area);
+            AppMode::Error(_) => {
+                let overlay = fixed_centered_rect(40, 8, main_area);
                 self.error_dialog.draw(f, overlay, true);
             }
         }
@@ -175,12 +207,12 @@ impl App {
         // Handle mode-specific keys
         match self.mode {
             AppMode::Browse => self.browse.handle_key(event).map(AppMsg::Browse),
-            AppMode::Form => self.contact_form.handle_key(event).map(AppMsg::Form),
+            AppMode::ContactForm => self.contact_form.handle_key(event).map(AppMsg::Form),
             AppMode::Delete => self
                 .delete_confirmation
                 .handle_key(event)
                 .map(AppMsg::DeleteDialog),
-            AppMode::Error => self.error_dialog.handle_key(event).map(AppMsg::ErrorDialog),
+            AppMode::Error(_) => self.error_dialog.handle_key(event).map(AppMsg::ErrorDialog),
         }
     }
     pub fn update<ParentMsg>(
@@ -206,6 +238,8 @@ impl App {
                     }
                     _ => {}
                 }
+                // Update status bar counts after any browse operation (search might have changed filtered count)
+                self.update_status_bar_counts();
                 None
             }
             AppMsg::Form(form_msg) => {
@@ -226,9 +260,11 @@ impl App {
                         }
                         self.refresh_contacts();
                         self.mode = AppMode::Browse;
+                        self.update_status_bar_mode();
                     }
                     Some(FormOutput::Cancelled) => {
                         self.mode = AppMode::Browse;
+                        self.update_status_bar_mode();
                     }
                     None => {}
                 }
@@ -241,6 +277,7 @@ impl App {
                         self.mode = AppMode::Browse;
                         let result = self.db.delete_contact(contact.id);
                         self.refresh_contacts();
+                        self.update_status_bar_mode();
                         if let Err(err) = result {
                             return Some(map(AppMsg::ShowError(err.to_string())));
                         }
@@ -248,6 +285,7 @@ impl App {
                     }
                     Some(DeleteOutput::Cancelled) => {
                         self.mode = AppMode::Browse;
+                        self.update_status_bar_mode();
                         None
                     }
                     None => None,
@@ -262,25 +300,33 @@ impl App {
                 None
             }
             AppMsg::AddContact => {
-                self.mode = AppMode::Form;
+                self.mode = AppMode::ContactForm;
                 self.contact_form.set_contact(Contact::default());
+                self.update_status_bar_mode();
                 None
             }
             AppMsg::EditContact(_contact) => {
-                self.mode = AppMode::Form;
+                self.mode = AppMode::ContactForm;
                 if let Some(contact) = &self.selected_contact {
                     self.contact_form.set_contact(contact.clone());
                 }
+                self.update_status_bar_mode();
                 None
             }
             AppMsg::ConfirmDelete(contact) => {
                 self.delete_confirmation.set_contact(contact);
                 self.mode = AppMode::Delete;
+                self.update_status_bar_mode();
                 None
             }
             AppMsg::ShowError(error) => {
                 self.error_dialog.set_error(&error);
-                self.mode = AppMode::Error;
+                self.mode = AppMode::Error(error);
+                self.update_status_bar_mode();
+                None
+            }
+            AppMsg::StatusBar(_) => {
+                // Status bar messages don't need handling at app level
                 None
             }
         }

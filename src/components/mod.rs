@@ -7,5 +7,6 @@ pub mod error_dialog;
 pub mod form;
 pub mod input;
 //pub mod search;
+pub mod status_bar;
 
 pub use component::Component;
