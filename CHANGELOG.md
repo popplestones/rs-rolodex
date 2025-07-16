@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2025-07-16
+
 ### Added
 - Status bar component with context-sensitive keyboard shortcuts and contact counts
 - Backup and restore functionality via CLI options (`--backup` and `--restore`)
