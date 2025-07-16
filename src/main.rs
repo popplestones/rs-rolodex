@@ -1,9 +1,9 @@
 use clap::Parser;
-use rolodex::cli::Cli;
-use rolodex::components::app::App;
-use rolodex::config::Config;
-use rolodex::error::AppResult as Result;
-use rolodex::{Db, trace, tui};
+use rolodex_tui::cli::Cli;
+use rolodex_tui::components::app::App;
+use rolodex_tui::config::Config;
+use rolodex_tui::error::AppResult as Result;
+use rolodex_tui::{Db, trace, tui};
 use tracing::{debug, info};
 
 fn main() -> Result<()> {
