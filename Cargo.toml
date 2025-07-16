@@ -9,7 +9,7 @@ repository = "https://github.com/popplestones/rs-rolodex"
 homepage = "https://github.com/popplestones/rs-rolodex"
 documentation = "https://docs.rs/rolodex"
 readme = "README.md"
-keywords = ["cli", "contacts", "tui", "terminal", "rolodex", "contact-manager"]
+keywords = ["cli", "contacts", "tui", "terminal", "rolodex"]
 categories = ["command-line-utilities", "database-implementations"]
 
 [dependencies]
